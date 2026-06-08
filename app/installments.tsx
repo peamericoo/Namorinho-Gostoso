@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { InstallmentForm } from "../src/components/forms/InstallmentForm";
@@ -27,7 +28,7 @@ export default function InstallmentsScreen() {
   const monthlyImpact = (installments.data ?? []).filter((item) => item.status !== "pago" && item.status !== "concluido").reduce((a, item) => a + installmentStatus(item).monthlyImpact, 0);
   return (
     <Screen>
-      <Header title="Parcelamentos" subtitle={`Impacto mensal aberto: ${money(monthlyImpact)}`} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
+      <Header title="Parcelamentos" subtitle={`Impacto mensal aberto: ${money(monthlyImpact)}`} back onBack={() => router.replace("/(tabs)/more")} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
       {(installments.data ?? []).map((item) => (
         <Card key={item.id}>
           <InstallmentCard installment={item} />

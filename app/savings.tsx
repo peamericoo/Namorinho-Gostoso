@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SavingsGoalForm } from "../src/components/forms/SavingsGoalForm";
@@ -27,7 +28,7 @@ export default function SavingsScreen() {
   }
   return (
     <Screen>
-      <Header title="Economia e metas" subtitle={`Economizado ${money(overview.saved)} de ${money(overview.target)}`} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
+      <Header title="Economia e metas" subtitle={`Economizado ${money(overview.saved)} de ${money(overview.target)}`} back onBack={() => router.replace("/(tabs)/more")} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
       <Card>
         <Text style={styles.title}>Progresso das metas</Text>
         <ProgressBar value={overview.progress} tone={overview.progress >= 1 ? "success" : "couple"} />

@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { ItineraryItemForm } from "../src/components/forms/ItineraryItemForm";
@@ -27,7 +28,7 @@ export default function ItineraryScreen() {
   const actual = (items.data ?? []).reduce((a, item) => a + item.actual_cost, 0);
   return (
     <Screen>
-      <Header title="Roteiro e agenda" subtitle={`Estimado ${money(estimated)} · Real ${money(actual)}`} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
+      <Header title="Roteiro e agenda" subtitle={`Estimado ${money(estimated)} · Real ${money(actual)}`} back onBack={() => router.replace("/(tabs)/more")} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
       {(items.data ?? []).map((item) => (
         <Card key={item.id}>
           <View style={styles.row}>

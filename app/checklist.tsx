@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { ChecklistItemForm } from "../src/components/forms/ChecklistItemForm";
@@ -27,7 +28,7 @@ export default function ChecklistScreen() {
   }
   return (
     <Screen>
-      <Header title="Checklist" subtitle="Itens por viagem, prazos e alertas." right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
+      <Header title="Checklist" subtitle="Itens por viagem, prazos e alertas." back onBack={() => router.replace("/(tabs)/more")} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
       <Card>
         <Text style={styles.title}>Progresso geral</Text>
         <ProgressBar value={progress} tone={progress === 1 ? "success" : "warning"} />

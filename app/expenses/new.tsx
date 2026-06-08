@@ -13,7 +13,7 @@ export default function NewExpenseScreen() {
   const mutations = useExpenseMutations();
   return (
     <Screen>
-      <Header title="Novo gasto" subtitle="Registre um gasto real e a divisão entre Pedro e Camilly." />
+      <Header title="Novo gasto" subtitle="Registre um gasto real e a divisão entre Pedro e Camilly." back onBack={() => router.replace("/(tabs)/expenses")} />
       <Card>
         {workspace.data?.couple ? (
           <ExpenseForm

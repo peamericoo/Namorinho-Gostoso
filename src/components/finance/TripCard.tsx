@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { labelPerson, labelStatus } from "../../constants/categories";
 import { theme } from "../../constants/theme";
 import { actualByTrip, plannedByTrip } from "../../lib/calculations";
@@ -6,6 +6,7 @@ import { dateBR, money } from "../../lib/formatters";
 import type { Expense, PlannedExpense, Trip } from "../../types/models";
 import { AvatarChip } from "../ui/AvatarChip";
 import { Badge } from "../ui/Badge";
+import { Card } from "../ui/Card";
 import { BudgetProgress } from "./BudgetProgress";
 
 export function TripCard({ trip, expenses, plannedExpenses, onPress }: { trip: Trip; expenses: Expense[]; plannedExpenses: PlannedExpense[]; onPress?: () => void }) {
@@ -13,7 +14,7 @@ export function TripCard({ trip, expenses, plannedExpenses, onPress }: { trip: T
   const planned = trip.planned_budget || plannedByTrip(trip.id, plannedExpenses);
   const overBudget = planned > 0 && actual > planned;
   return (
-    <Pressable onPress={onPress} style={styles.card}>
+    <Card onPress={onPress} accessibilityLabel={`Abrir viagem ${trip.title}`}>
       <View style={styles.top}>
         <View style={styles.titleWrap}>
           <Text style={styles.title}>{trip.title}</Text>
@@ -27,20 +28,11 @@ export function TripCard({ trip, expenses, plannedExpenses, onPress }: { trip: T
       </View>
       <BudgetProgress planned={planned} actual={actual} />
       <Text style={styles.footer}>Viajando: {labelPerson(trip.traveler_person)} · Planejado {money(planned)}</Text>
-    </Pressable>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.line,
-    gap: theme.spacing.md,
-    ...theme.shadow
-  },
   top: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
   titleWrap: { flex: 1 },
   title: { color: theme.colors.text, fontSize: theme.typography.h2, fontWeight: "900" },

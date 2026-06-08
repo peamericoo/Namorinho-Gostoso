@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { CategoryForm } from "../src/components/forms/CategoryForm";
@@ -16,7 +17,7 @@ export default function CategoriesScreen() {
   const mutations = useCategoryMutations();
   return (
     <Screen>
-      <Header title="Categorias" subtitle="Gerencie categorias e subcategorias do casal." right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
+      <Header title="Categorias" subtitle="Gerencie categorias e subcategorias do casal." back onBack={() => router.replace("/(tabs)/more")} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
       {(categories.data ?? []).map((category) => (
         <Card key={category.id}>
           <View style={styles.row}>

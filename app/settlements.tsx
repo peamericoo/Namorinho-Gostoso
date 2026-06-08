@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../src/components/ui/Button";
@@ -29,7 +30,7 @@ export default function SettlementsScreen() {
   }
   return (
     <Screen>
-      <Header title="Divisão e acertos" subtitle="Veja quem pagou, quem deveria pagar e o acerto sugerido." />
+      <Header title="Divisão e acertos" subtitle="Veja quem pagou, quem deveria pagar e o acerto sugerido." back onBack={() => router.replace("/(tabs)/more")} />
       <Card>
         <Text style={styles.result}>{result.message}</Text>
         <Text style={styles.meta}>Valor sugerido: {money(result.amount)}</Text>

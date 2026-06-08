@@ -17,7 +17,7 @@ export default function EditExpenseScreen() {
   const mutations = useExpenseMutations();
   return (
     <Screen>
-      <Header title="Editar gasto" subtitle={expense.data?.description ?? "Atualize o registro real."} />
+      <Header title="Editar gasto" subtitle={expense.data?.description ?? "Atualize o registro real."} back onBack={() => router.replace("/(tabs)/expenses")} />
       <Card>
         {workspace.data?.couple && expense.data ? (
           <ExpenseForm

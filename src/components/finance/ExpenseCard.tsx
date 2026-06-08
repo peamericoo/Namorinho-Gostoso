@@ -1,13 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { labelPerson } from "../../constants/categories";
 import { theme } from "../../constants/theme";
 import { dateBR, money } from "../../lib/formatters";
 import type { Expense } from "../../types/models";
 import { Badge } from "../ui/Badge";
+import { Card } from "../ui/Card";
 
 export function ExpenseCard({ expense, onPress }: { expense: Expense; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} style={styles.card}>
+    <Card onPress={onPress} accessibilityLabel={`Abrir gasto ${expense.description}`}>
       <View style={styles.row}>
         <View style={styles.copy}>
           <Text style={styles.title}>{expense.description}</Text>
@@ -20,19 +21,11 @@ export function ExpenseCard({ expense, onPress }: { expense: Expense; onPress?: 
         <Badge label={expense.should_split ? "Dividido" : "Individual"} tone={expense.should_split ? "success" : "neutral"} />
         {expense.receipt_url ? <Badge label="Comprovante" tone="pedro" /> : null}
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.line,
-    gap: theme.spacing.md
-  },
   row: { flexDirection: "row", gap: theme.spacing.md, justifyContent: "space-between" },
   copy: { flex: 1, gap: 3 },
   title: { color: theme.colors.text, fontWeight: "900", fontSize: 16 },

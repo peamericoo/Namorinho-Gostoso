@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { StyleSheet, Text } from "react-native";
 import { Card } from "../src/components/ui/Card";
 import { Header } from "../src/components/ui/Header";
@@ -17,7 +18,7 @@ const sections = [
 export default function HelpScreen() {
   return (
     <Screen>
-      <Header title="Ajuda rápida" subtitle="O essencial para manter os dados organizados." />
+      <Header title="Ajuda rápida" subtitle="O essencial para manter os dados organizados." back onBack={() => router.replace("/(tabs)/more")} />
       {sections.map(([title, body]) => (
         <Card key={title}>
           <Text style={styles.title}>{title}</Text>

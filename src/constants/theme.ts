@@ -6,9 +6,12 @@ export const theme = {
     appBackground: "#F4F1F6",
     surface: "#FFFFFF",
     surfaceAlt: "#F8F3FF",
+    surfaceRaised: "#FEFCFF",
     text: "#263238",
     muted: "#64748B",
+    mutedSoft: "#94A3B8",
     line: "#E2E8F0",
+    lineStrong: "#CBD5E1",
     pedro: "#DDEBFF",
     pedroStrong: "#4779C4",
     camilly: "#FCE0EC",
@@ -21,7 +24,8 @@ export const theme = {
     warningStrong: "#B7791F",
     danger: "#FEE2E2",
     dangerStrong: "#C2410C",
-    input: "#EFF6FF"
+    input: "#F8FBFF",
+    focusRing: "#B8C7FF"
   },
   spacing: {
     xs: 4,
@@ -43,6 +47,10 @@ export const theme = {
     h2: 18,
     body: 15,
     small: 12
+  },
+  transition: {
+    fast: 120,
+    base: 180
   },
   shadow: Platform.select({
     web: {

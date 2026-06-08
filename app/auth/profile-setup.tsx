@@ -23,7 +23,8 @@ const schema = z.object({
 });
 
 export default function ProfileSetupScreen() {
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth.user;
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: { fullName: "", displayName: "", personKey: "pedro", coupleName: "Pedro e Camilly" }
@@ -42,7 +43,15 @@ export default function ProfileSetupScreen() {
 
   return (
     <Screen>
-      <Header title="Configurar perfil" subtitle="Crie seu perfil e o espaço financeiro compartilhado." />
+      <Header
+        title="Configurar perfil"
+        subtitle="Crie seu perfil e o espaço financeiro compartilhado."
+        back
+        onBack={() => {
+          void auth.signOut();
+          router.replace("/auth/login");
+        }}
+      />
       <Card>
         <Controller control={form.control} name="fullName" render={({ field }) => <Input label="Nome completo" value={field.value} onChangeText={field.onChange} error={form.formState.errors.fullName?.message} />} />
         <Controller control={form.control} name="displayName" render={({ field }) => <Input label="Nome curto" value={field.value} onChangeText={field.onChange} error={form.formState.errors.displayName?.message} />} />

@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, Text } from "react-native";
@@ -76,7 +77,7 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <Header title="Configurações" subtitle="Perfil, orçamentos e regras padrão do casal." />
+      <Header title="Configurações" subtitle="Perfil, orçamentos e regras padrão do casal." back onBack={() => router.replace("/(tabs)/more")} />
       <Card>
         <Text style={styles.title}>Perfil</Text>
         <Controller control={form.control} name="full_name" render={({ field }) => <Input label="Nome completo" value={field.value} onChangeText={field.onChange} error={form.formState.errors.full_name?.message} />} />

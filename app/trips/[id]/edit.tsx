@@ -11,7 +11,7 @@ export default function EditTripScreen() {
   const mutations = useTripMutations();
   return (
     <Screen>
-      <Header title="Editar viagem" subtitle={trip.data?.title ?? "Atualize os dados principais."} />
+      <Header title="Editar viagem" subtitle={trip.data?.title ?? "Atualize os dados principais."} back onBack={() => router.replace(`/trips/${id}`)} />
       <Card>
         {trip.data ? (
           <TripForm

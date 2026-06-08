@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../src/hooks/useAuth";
 import { queryClient } from "../src/lib/queryClient";
+import { theme } from "../src/constants/theme";
 
 export default function RootLayout() {
   return (
@@ -13,7 +14,15 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <StatusBar style="dark" />
-            <Stack screenOptions={{ headerShown: false }} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: "slide_from_right",
+                animationDuration: theme.transition.base,
+                gestureEnabled: true,
+                contentStyle: { backgroundColor: theme.colors.appBackground }
+              }}
+            />
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

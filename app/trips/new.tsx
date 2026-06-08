@@ -9,7 +9,7 @@ export default function NewTripScreen() {
   const mutations = useTripMutations();
   return (
     <Screen>
-      <Header title="Nova viagem" subtitle="Cadastre datas, cidades, orçamento e links importantes." />
+      <Header title="Nova viagem" subtitle="Cadastre datas, cidades, orçamento e links importantes." back onBack={() => router.replace("/(tabs)/trips")} />
       <Card>
         <TripForm
           loading={mutations.create.isPending}

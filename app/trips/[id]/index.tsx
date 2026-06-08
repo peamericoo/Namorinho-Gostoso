@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, StyleSheet, Text, View } from "react-native";
 import { AlertBanner } from "../../../src/components/ui/AlertBanner";
 import { Badge } from "../../../src/components/ui/Badge";
 import { Button } from "../../../src/components/ui/Button";
@@ -26,7 +26,7 @@ export default function TripDetailScreen() {
   if (!trip.data) {
     return (
       <Screen>
-        <Header title="Viagem" subtitle="Carregando detalhes..." />
+        <Header title="Viagem" subtitle="Carregando detalhes..." back onBack={() => router.replace("/(tabs)/trips")} />
       </Screen>
     );
   }
@@ -38,14 +38,23 @@ export default function TripDetailScreen() {
   const summary = tripSummary(trip.data, expenses.data ?? [], planned.data ?? []);
   const checklistProgress = tripChecklist.length ? tripChecklist.filter((item) => item.is_done).length / tripChecklist.length : 0;
 
-  async function remove() {
-    await mutations.remove.mutateAsync(trip.data!.id);
-    router.replace("/(tabs)/trips");
+  function confirmRemove() {
+    Alert.alert("Excluir viagem", "Essa ação remove a viagem e os dados vinculados a ela.", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          await mutations.remove.mutateAsync(trip.data!.id);
+          router.replace("/(tabs)/trips");
+        }
+      }
+    ]);
   }
 
   return (
     <Screen>
-      <Header title={trip.data.title} subtitle={`${trip.data.origin_city} → ${trip.data.destination_city}`} />
+      <Header title={trip.data.title} subtitle={`${trip.data.origin_city} → ${trip.data.destination_city}`} back onBack={() => router.replace("/(tabs)/trips")} />
       <Card>
         <View style={styles.row}>
           <Badge label={trip.data.status} tone={trip.data.status === "concluida" ? "success" : "neutral"} />
@@ -99,7 +108,7 @@ export default function TripDetailScreen() {
 
       <View style={styles.row}>
         <Button title="Editar" onPress={() => router.push(`/trips/${trip.data?.id}/edit`)} />
-        <Button title="Excluir" variant="danger" loading={mutations.remove.isPending} onPress={remove} />
+        <Button title="Excluir" variant="danger" loading={mutations.remove.isPending} onPress={confirmRemove} />
       </View>
     </Screen>
   );

@@ -30,9 +30,16 @@ export default function TabsLayout() {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.line,
           minHeight: 68,
-          paddingTop: 8
+          paddingTop: 8,
+          paddingBottom: 8
         },
-        tabBarLabelStyle: { fontWeight: "800" }
+        tabBarItemStyle: {
+          borderRadius: theme.radius.md,
+          marginHorizontal: 3,
+          marginVertical: 4
+        },
+        tabBarLabelStyle: { fontWeight: "800", fontSize: 11 },
+        tabBarHideOnKeyboard: true
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Painel", tabBarIcon: ({ color, size }) => <BarChart3 color={color} size={size} /> }} />

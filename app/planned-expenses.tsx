@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { PlannedExpenseForm } from "../src/components/forms/PlannedExpenseForm";
@@ -30,7 +31,7 @@ export default function PlannedExpensesScreen() {
 
   return (
     <Screen>
-      <Header title="Custos planejados" subtitle={`Total previsto: ${money(total)}`} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
+      <Header title="Custos planejados" subtitle={`Total previsto: ${money(total)}`} back onBack={() => router.replace("/(tabs)/more")} right={<Button title="Adicionar" onPress={() => setOpen(true)} />} />
       <View style={styles.summary}>
         <Card><Text style={styles.kpi}>Pedro</Text><Text style={styles.amount}>{money((planned.data ?? []).filter((i) => i.owner_person === "pedro").reduce((a, i) => a + i.planned_amount, 0))}</Text></Card>
         <Card><Text style={styles.kpi}>Camilly</Text><Text style={styles.amount}>{money((planned.data ?? []).filter((i) => i.owner_person === "camilly").reduce((a, i) => a + i.planned_amount, 0))}</Text></Card>

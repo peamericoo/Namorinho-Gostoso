@@ -37,7 +37,7 @@ export default function SignupScreen() {
 
   return (
     <Screen>
-      <Header title="Criar conta" subtitle="Depois você cria o espaço compartilhado do casal." />
+      <Header title="Criar conta" subtitle="Depois você cria o espaço compartilhado do casal." back onBack={() => router.replace("/auth/login")} />
       <Card>
         <Controller control={form.control} name="email" render={({ field }) => <Input label="E-mail" value={field.value} onChangeText={field.onChange} autoCapitalize="none" error={form.formState.errors.email?.message} />} />
         <Controller control={form.control} name="password" render={({ field }) => <Input label="Senha" value={field.value} onChangeText={field.onChange} secureTextEntry error={form.formState.errors.password?.message} />} />

@@ -24,7 +24,7 @@ export default function ForgotPasswordScreen() {
   }
   return (
     <Screen>
-      <Header title="Recuperar senha" subtitle="Informe o e-mail usado no app." />
+      <Header title="Recuperar senha" subtitle="Informe o e-mail usado no app." back onBack={() => router.replace("/auth/login")} />
       <Card>
         <Controller control={form.control} name="email" render={({ field }) => <Input label="E-mail" value={field.value} onChangeText={field.onChange} autoCapitalize="none" error={form.formState.errors.email?.message} />} />
         {message ? <Text style={{ color: theme.colors.successStrong, fontWeight: "800" }}>{message}</Text> : null}
