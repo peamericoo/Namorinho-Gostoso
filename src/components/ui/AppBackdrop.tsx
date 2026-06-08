@@ -29,7 +29,7 @@ export function AppBackdrop() {
   const translateY = drift.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View style={styles.root}>
       <Animated.View style={[styles.layer, { transform: [{ translateX }, { translateY }] }]}>
         <Svg width="100%" height="100%" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
           <Path d="M-46 110 C38 68 96 143 176 98 C247 58 294 66 434 14" stroke={theme.colors.pedroStrong} strokeWidth={1.4} opacity={0.12} fill="none" />
@@ -56,6 +56,10 @@ export function AppBackdrop() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    ...StyleSheet.absoluteFillObject,
+    pointerEvents: "none"
+  },
   layer: {
     ...StyleSheet.absoluteFillObject
   }

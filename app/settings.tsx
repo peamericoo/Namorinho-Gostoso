@@ -14,6 +14,7 @@ import { theme } from "../src/constants/theme";
 import { useAuth } from "../src/hooks/useAuth";
 import { useSettingsMutations } from "../src/hooks/useFinanceData";
 import { useWorkspace } from "../src/hooks/useWorkspace";
+import { openFirstAccessTutorial } from "../src/components/tutorial/FirstAccessTutorial";
 
 const schema = z
   .object({
@@ -95,11 +96,17 @@ export default function SettingsScreen() {
         <Controller control={form.control} name="emergency_reserve_percent" render={({ field }) => <Input label="Reserva de emergência %" value={String(field.value ?? "")} onChangeText={field.onChange} keyboardType="decimal-pad" />} />
         <Button title="Salvar configurações" loading={mutations.updateCouple.isPending || mutations.updateProfile.isPending} onPress={form.handleSubmit(submit)} />
       </Card>
+      <Card>
+        <Text style={styles.title}>Tutorial</Text>
+        <Text style={styles.meta}>Reabra o passo a passo prático para aprender o app com calma, tela por tela.</Text>
+        <Button title="Reabrir tutorial" variant="secondary" onPress={openFirstAccessTutorial} />
+      </Card>
       <Button title="Sair da conta" variant="danger" onPress={auth.signOut} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { color: theme.colors.text, fontWeight: "900", fontSize: theme.typography.h2 }
+  title: { color: theme.colors.text, fontWeight: "900", fontSize: theme.typography.h2 },
+  meta: { color: theme.colors.muted, fontWeight: "700", lineHeight: 21 }
 });

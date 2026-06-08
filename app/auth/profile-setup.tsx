@@ -27,7 +27,7 @@ export default function ProfileSetupScreen() {
   const user = auth.user;
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { fullName: "", displayName: "", personKey: "pedro", coupleName: "Pedro e Camilly" }
+    defaultValues: { fullName: "Camilly", displayName: "Camilly", personKey: "camilly", coupleName: "Pedro e Camilly" }
   });
 
   async function submit(values: z.infer<typeof schema>) {

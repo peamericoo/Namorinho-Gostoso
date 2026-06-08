@@ -10,6 +10,7 @@ export type Profile = {
   display_name: string;
   avatar_url?: string | null;
   person_key: Exclude<PersonKey, "ambos">;
+  tutorial_completed_at?: string | null;
 };
 
 export type Couple = {

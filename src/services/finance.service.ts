@@ -366,3 +366,19 @@ export async function updateProfile(userId: string, values: Partial<Profile>) {
   raise(error, "Não foi possível salvar perfil.");
   return data as Profile;
 }
+
+export async function getAppSetting(coupleId: string, key: string) {
+  const { data, error } = await supabase.from("app_settings").select("*").eq("couple_id", coupleId).eq("key", key).maybeSingle();
+  raise(error, "Nao foi possivel carregar configuracao do app.");
+  return (data?.value ?? null) as Record<string, unknown> | null;
+}
+
+export async function upsertAppSetting(coupleId: string, key: string, value: Record<string, unknown>) {
+  const { data, error } = await supabase
+    .from("app_settings")
+    .upsert({ couple_id: coupleId, key, value }, { onConflict: "couple_id,key" })
+    .select("*")
+    .single();
+  raise(error, "Nao foi possivel salvar configuracao do app.");
+  return data as { id: string; couple_id: string; key: string; value: Record<string, unknown> };
+}
