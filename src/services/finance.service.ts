@@ -81,9 +81,16 @@ export async function setupProfileAndCouple(input: {
   });
   raise(profileError, "Não foi possível salvar o perfil.");
 
-  const { data: couple, error: coupleError } = await supabase
+  // Gera o UUID no cliente para evitar o erro de select com RLS (já que o usuário ainda não é membro)
+  const coupleId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+
+  const { error: coupleError } = await supabase
     .from("couples")
     .insert({
+      id: coupleId,
       name: input.coupleName,
       created_by: input.userId,
       default_currency: "BRL",
@@ -93,14 +100,11 @@ export async function setupProfileAndCouple(input: {
       monthly_budget_camilly: 1800,
       monthly_budget_shared: 4000,
       emergency_reserve_percent: 12
-    })
-    .select("*")
-    .single();
-  if (!couple) throw new Error("Nao foi possivel criar o espaco do casal.");
+    });
   raise(coupleError, "Não foi possível criar o espaço do casal.");
 
   const { error: memberError } = await supabase.from("couple_members").insert({
-    couple_id: couple.id,
+    couple_id: coupleId,
     user_id: input.userId,
     role: "admin",
     person_key: input.personKey
@@ -109,7 +113,7 @@ export async function setupProfileAndCouple(input: {
 
   const { error: categoryError } = await supabase.from("categories").insert(
     defaultCategoryNames.map((name, index) => ({
-      couple_id: couple.id,
+      couple_id: coupleId,
       name,
       type: "expense",
       icon: index === 0 ? "plane" : index === 3 ? "utensils" : index === 4 ? "heart" : "tag",
@@ -119,7 +123,7 @@ export async function setupProfileAndCouple(input: {
   );
   raise(categoryError, "Espaço criado, mas não foi possível criar categorias padrão.");
 
-  return couple as Couple;
+  return { id: coupleId } as Couple;
 }
 
 export async function listTrips(coupleId: string) {

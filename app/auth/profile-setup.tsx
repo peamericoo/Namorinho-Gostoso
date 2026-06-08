@@ -31,9 +31,13 @@ export default function ProfileSetupScreen() {
 
   async function submit(values: z.infer<typeof schema>) {
     if (!user) return;
-    await setupProfileAndCouple({ userId: user.id, ...values });
-    await queryClient.invalidateQueries();
-    router.replace("/");
+    try {
+      await setupProfileAndCouple({ userId: user.id, ...values });
+      await queryClient.invalidateQueries();
+      router.replace("/");
+    } catch (err: any) {
+      form.setError("root", { message: err.message || String(err) });
+    }
   }
 
   return (
