@@ -29,16 +29,29 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.line,
-          minHeight: 68,
-          paddingTop: 8,
-          paddingBottom: 8
+          height: 76,
+          minHeight: 76,
+          paddingTop: 6,
+          paddingBottom: 10,
+          overflow: "visible"
         },
         tabBarItemStyle: {
           borderRadius: theme.radius.md,
           marginHorizontal: 3,
-          marginVertical: 4
+          marginTop: 4,
+          marginBottom: 6,
+          paddingTop: 2,
+          paddingBottom: 2
         },
-        tabBarLabelStyle: { fontWeight: "800", fontSize: 11 },
+        tabBarIconStyle: { marginTop: 2, marginBottom: 0 },
+        tabBarLabelStyle: {
+          fontWeight: "800",
+          fontSize: 11,
+          lineHeight: 13,
+          marginTop: -1,
+          marginBottom: 0,
+          includeFontPadding: false
+        },
         tabBarHideOnKeyboard: true
       }}
     >
