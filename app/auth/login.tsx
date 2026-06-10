@@ -49,7 +49,7 @@ export default function LoginScreen() {
           <Link href="/auth/signup" style={styles.link}>Criar conta</Link>
           <Link href="/auth/forgot-password" style={styles.link}>Esqueci minha senha</Link>
         </View>
-        <Text style={styles.demo}>Primeiro acesso: entre com o e-mail principal e a senha combinada. Depois a Camilly pode seguir o tutorial guiado.</Text>
+        <Text style={styles.demo}>Primeiro acesso: entre com o e-mail principal e a senha combinada.</Text>
       </Card>
     </Screen>
   );

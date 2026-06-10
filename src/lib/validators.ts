@@ -8,6 +8,9 @@ export const personOrBothSchema = z.enum(["pedro", "camilly", "ambos"], { error:
 export const tripStatusSchema = z.enum(["planejada", "em_andamento", "concluida", "cancelada", "adiada"], { error: required });
 export const prioritySchema = z.enum(["alta", "media", "baixa"], { error: required });
 export const costTypeSchema = z.enum(["fixo", "variavel", "emergencial", "opcional"], { error: required });
+export const plannedExpenseStatusSchema = z.enum(["orcado", "reservado", "ideia", "comprado", "cancelado"], { error: required });
+export const operationalStatusSchema = z.enum(["pendente", "em_andamento", "concluido", "cancelado", "planejado", "ideia"], { error: required });
+export const installmentStatusSchema = z.enum(["pendente", "pago", "concluido", "atrasado", "cancelado"], { error: required });
 
 export const tripSchema = z
   .object({
@@ -66,29 +69,54 @@ export const expenseSchema = z
   .refine((data) => !data.is_installment || data.installment_count > 1, {
     path: ["installment_count"],
     message: "Informe o número de parcelas."
+  })
+  .refine((data) => data.current_installment <= data.installment_count, {
+    path: ["current_installment"],
+    message: "A parcela atual não pode ser maior que o total de parcelas."
+  })
+  .refine((data) => !data.is_installment || data.installment_amount === 0 || Math.abs(data.installment_amount * data.installment_count - data.amount) <= data.installment_count * 0.01, {
+    path: ["installment_amount"],
+    message: "Valor da parcela incompatível com o total."
   });
 
-export const plannedExpenseSchema = z.object({
-  trip_id: z.string().min(1, "Escolha a viagem."),
-  owner_person: personSchema,
-  expected_date: z.string().optional().nullable(),
-  category_id: z.string().min(1, "Escolha a categoria."),
-  subcategory_id: z.string().optional().nullable(),
-  cost_type: costTypeSchema,
-  description: z.string().min(2, "Descreva o custo."),
-  planned_amount: z.coerce.number().min(0, nonNegative),
-  min_amount: z.coerce.number().min(0, nonNegative),
-  max_amount: z.coerce.number().min(0, nonNegative),
-  probability: z.coerce.number().min(0).max(100),
-  is_required: z.coerce.boolean(),
-  paid_by_person: personOrBothSchema,
-  beneficiary_person: personOrBothSchema,
-  payment_method: z.string().optional().nullable(),
-  is_installment: z.coerce.boolean(),
-  installment_count: z.coerce.number().int().min(1),
-  status: z.string().min(1, required),
-  notes: z.string().optional().nullable()
-});
+export const plannedExpenseSchema = z
+  .object({
+    trip_id: z.string().min(1, "Escolha a viagem."),
+    owner_person: personSchema,
+    expected_date: z.string().optional().nullable(),
+    category_id: z.string().min(1, "Escolha a categoria."),
+    subcategory_id: z.string().optional().nullable(),
+    cost_type: costTypeSchema,
+    description: z.string().min(2, "Descreva o custo."),
+    planned_amount: z.coerce.number().min(0, nonNegative),
+    min_amount: z.coerce.number().min(0, nonNegative),
+    max_amount: z.coerce.number().min(0, nonNegative),
+    probability: z.coerce.number().min(0).max(100),
+    is_required: z.coerce.boolean(),
+    paid_by_person: personOrBothSchema,
+    beneficiary_person: personOrBothSchema,
+    payment_method: z.string().optional().nullable(),
+    is_installment: z.coerce.boolean(),
+    installment_count: z.coerce.number().int().min(1),
+    status: plannedExpenseStatusSchema,
+    notes: z.string().optional().nullable()
+  })
+  .refine((data) => data.max_amount === 0 || data.min_amount <= data.max_amount, {
+    path: ["max_amount"],
+    message: "O valor máximo não pode ser menor que o mínimo."
+  })
+  .refine((data) => data.min_amount === 0 || data.planned_amount >= data.min_amount, {
+    path: ["planned_amount"],
+    message: "O planejado não pode ser menor que o mínimo."
+  })
+  .refine((data) => data.max_amount === 0 || data.planned_amount <= data.max_amount, {
+    path: ["planned_amount"],
+    message: "O planejado não pode ser maior que o máximo."
+  })
+  .refine((data) => !data.is_installment || data.installment_count > 1, {
+    path: ["installment_count"],
+    message: "Informe o número de parcelas."
+  });
 
 export const simulatorSchema = z
   .object({
@@ -125,7 +153,7 @@ export const checklistSchema = z.object({
   category: z.string().min(2, required),
   responsible_person: personOrBothSchema,
   due_date: z.string().optional().nullable(),
-  status: z.string().min(1, required),
+  status: operationalStatusSchema,
   priority: prioritySchema,
   is_done: z.coerce.boolean(),
   notes: z.string().optional().nullable()
@@ -143,7 +171,7 @@ export const itinerarySchema = z.object({
   responsible_person: personOrBothSchema,
   requires_booking: z.coerce.boolean(),
   booking_url: z.string().optional().nullable(),
-  status: z.string().min(1, required),
+  status: operationalStatusSchema,
   notes: z.string().optional().nullable()
 });
 
@@ -156,19 +184,28 @@ export const savingsGoalSchema = z.object({
   notes: z.string().optional().nullable()
 });
 
-export const installmentSchema = z.object({
-  trip_id: z.string().optional().nullable(),
-  responsible_person: personSchema,
-  description: z.string().min(2, "Descreva o parcelamento."),
-  total_amount: z.coerce.number().min(0, nonNegative),
-  installment_count: z.coerce.number().int().min(1),
-  installment_amount: z.coerce.number().min(0, nonNegative),
-  current_installment: z.coerce.number().int().min(1),
-  due_date: z.string().min(10, "Informe o vencimento."),
-  status: z.string().min(1, required),
-  payment_method: z.string().optional().nullable(),
-  notes: z.string().optional().nullable()
-});
+export const installmentSchema = z
+  .object({
+    trip_id: z.string().optional().nullable(),
+    responsible_person: personSchema,
+    description: z.string().min(2, "Descreva o parcelamento."),
+    total_amount: z.coerce.number().min(0, nonNegative),
+    installment_count: z.coerce.number().int().min(1),
+    installment_amount: z.coerce.number().min(0, nonNegative),
+    current_installment: z.coerce.number().int().min(1),
+    due_date: z.string().min(10, "Informe o vencimento."),
+    status: installmentStatusSchema,
+    payment_method: z.string().optional().nullable(),
+    notes: z.string().optional().nullable()
+  })
+  .refine((data) => data.current_installment <= data.installment_count, {
+    path: ["current_installment"],
+    message: "A parcela atual não pode ser maior que o total de parcelas."
+  })
+  .refine((data) => data.installment_amount === 0 || Math.abs(data.installment_amount * data.installment_count - data.total_amount) <= data.installment_count * 0.01, {
+    path: ["installment_amount"],
+    message: "Valor da parcela incompatível com o total."
+  });
 
 export const categorySchema = z.object({
   name: z.string().min(2, "Informe o nome."),

@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
 import { theme } from "../../constants/theme";
-import type { Expense } from "../../types/models";
+import type { Expense, Settlement } from "../../types/models";
 import { calculateSettlement } from "../../lib/calculations";
 import { money } from "../../lib/formatters";
 import { Card } from "../ui/Card";
 
-export function SettlementCard({ expenses }: { expenses: Expense[] }) {
-  const settlement = calculateSettlement(expenses);
+export function SettlementCard({ expenses, settlements = [] }: { expenses: Expense[]; settlements?: Settlement[] }) {
+  const settlement = calculateSettlement(expenses, settlements);
   return (
     <Card style={styles.card}>
       <Text style={styles.title}>Divisão e acertos</Text>

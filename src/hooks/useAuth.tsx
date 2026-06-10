@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import * as Linking from "expo-linking";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
@@ -55,7 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
       async resetPassword(email) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: Linking.createURL("/auth/login")
+        });
         if (error) throw new Error("Não foi possível enviar o e-mail de recuperação.");
       }
     }),

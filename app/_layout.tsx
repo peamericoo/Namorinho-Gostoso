@@ -6,7 +6,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../src/hooks/useAuth";
 import { queryClient } from "../src/lib/queryClient";
 import { theme } from "../src/constants/theme";
-import { FirstAccessTutorial } from "../src/components/tutorial/FirstAccessTutorial";
 
 export default function RootLayout() {
   return (
@@ -24,7 +23,6 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: theme.colors.appBackground }
               }}
             />
-            <FirstAccessTutorial />
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

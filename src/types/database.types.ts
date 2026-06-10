@@ -39,7 +39,17 @@ export type Database = {
       couple_members: TableDef<{ id: string; couple_id: string; user_id: string; role: string; person_key: string }>;
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      create_workspace: {
+        Args: {
+          p_full_name: string;
+          p_display_name: string;
+          p_person_key: string;
+          p_couple_name: string;
+        };
+        Returns: string;
+      };
+    };
     Enums: Record<string, never>;
   };
 };

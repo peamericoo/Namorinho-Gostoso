@@ -10,7 +10,6 @@ export type Profile = {
   display_name: string;
   avatar_url?: string | null;
   person_key: Exclude<PersonKey, "ambos">;
-  tutorial_completed_at?: string | null;
 };
 
 export type Couple = {
@@ -194,6 +193,21 @@ export type Settlement = {
   notes?: string | null;
 };
 
+export type SettlementSummary = {
+  totalPaidByPedro: number;
+  totalPaidByCamilly: number;
+  pedroResponsibility: number;
+  camillyResponsibility: number;
+  totalSettledByPedro: number;
+  totalSettledByCamilly: number;
+  pedroBalance: number;
+  camillyBalance: number;
+  payer: Exclude<PersonKey, "ambos"> | null;
+  receiver: Exclude<PersonKey, "ambos"> | null;
+  amount: number;
+  message: string;
+};
+
 export type DashboardData = {
   trips: Trip[];
   expenses: Expense[];
@@ -201,5 +215,6 @@ export type DashboardData = {
   checklistItems: ChecklistItem[];
   savingsGoals: SavingsGoal[];
   installments: Installment[];
+  settlements?: Settlement[];
   categories: Category[];
 };

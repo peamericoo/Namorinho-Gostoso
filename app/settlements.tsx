@@ -15,9 +15,17 @@ export default function SettlementsScreen() {
   const expenses = useExpenses();
   const settlements = useSettlements();
   const mutations = useSettlementMutations();
-  const result = useMemo(() => calculateSettlement(expenses.data ?? []), [expenses.data]);
+  const result = useMemo(() => calculateSettlement(expenses.data ?? [], settlements.data ?? []), [expenses.data, settlements.data]);
   async function settle() {
     if (!result.payer || !result.receiver || result.amount <= 0) return;
+    const alreadyRegistered = (settlements.data ?? []).some(
+      (item) =>
+        item.payer_person === result.payer &&
+        item.receiver_person === result.receiver &&
+        Math.abs(Number(item.amount) - result.amount) < 0.01 &&
+        ["pendente", "pago", "concluido"].includes(item.status)
+    );
+    if (alreadyRegistered) return;
     await mutations.create.mutateAsync({
       payer_person: result.payer,
       receiver_person: result.receiver,

@@ -6,7 +6,7 @@ import {
   savingsOverview,
   tripSummary
 } from "../../lib/calculations";
-import type { Expense, Installment, PlannedExpense, SavingsGoal, Trip } from "../../types/models";
+import type { Expense, Installment, PlannedExpense, SavingsGoal, Settlement, Trip } from "../../types/models";
 
 const trip: Trip = {
   id: "trip-1",
@@ -58,6 +58,79 @@ describe("cálculos financeiros", () => {
     expect(result.receiver).toBe("pedro");
     expect(result.amount).toBe(100);
     expect(result.message).toContain("Camilly deve pagar");
+  });
+
+  it("responsabiliza o beneficiário em gasto individual pago pela outra pessoa", () => {
+    const result = calculateExpenseResponsibility({
+      ...baseExpense,
+      paid_by_person: "pedro",
+      beneficiary_person: "camilly",
+      should_split: false,
+      split_pedro_percent: 100,
+      split_camilly_percent: 0
+    });
+    expect(result.pedroResponsibility).toBe(0);
+    expect(result.camillyResponsibility).toBe(200);
+    expect(result.pedroBalance).toBe(200);
+    expect(result.camillyBalance).toBe(-200);
+  });
+
+  it("responsabiliza Pedro quando Camilly paga um gasto individual dele", () => {
+    const result = calculateSettlement([
+      {
+        ...baseExpense,
+        paid_by_person: "camilly",
+        beneficiary_person: "pedro",
+        should_split: false,
+        split_pedro_percent: 0,
+        split_camilly_percent: 100
+      }
+    ]);
+    expect(result.payer).toBe("pedro");
+    expect(result.receiver).toBe("camilly");
+    expect(result.amount).toBe(200);
+  });
+
+  it("não gera acerto para gasto não reembolsável", () => {
+    const result = calculateSettlement([
+      {
+        ...baseExpense,
+        paid_by_person: "pedro",
+        beneficiary_person: "camilly",
+        should_split: false,
+        is_reimbursable: false
+      }
+    ]);
+    expect(result.payer).toBeNull();
+    expect(result.receiver).toBeNull();
+    expect(result.amount).toBe(0);
+  });
+
+  it("abate acerto concluído do saldo pendente", () => {
+    const settlements: Settlement[] = [
+      {
+        id: "settlement-1",
+        couple_id: "couple-1",
+        payer_person: "camilly",
+        receiver_person: "pedro",
+        amount: 100,
+        status: "concluido",
+        settled_at: "2026-07-02"
+      }
+    ];
+    const result = calculateSettlement([baseExpense], settlements);
+    expect(result.payer).toBeNull();
+    expect(result.receiver).toBeNull();
+    expect(result.amount).toBe(0);
+    expect(result.totalSettledByCamilly).toBe(100);
+  });
+
+  it("arredonda diferenças financeiras em centavos", () => {
+    const result = calculateSettlement([
+      { ...baseExpense, amount: 0.1, split_pedro_percent: 50, split_camilly_percent: 50 },
+      { ...baseExpense, id: "expense-2", amount: 0.2, split_pedro_percent: 50, split_camilly_percent: 50 }
+    ]);
+    expect(result.amount).toBe(0.15);
   });
 
   it("calcula totais de viagem", () => {

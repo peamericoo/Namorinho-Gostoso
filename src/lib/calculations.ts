@@ -1,5 +1,5 @@
 import { addDays, differenceInCalendarDays, isBefore, parseISO } from "date-fns";
-import type { ChecklistItem, Expense, Installment, PlannedExpense, SavingsGoal, Trip } from "../types/models";
+import type { ChecklistItem, Expense, Installment, PlannedExpense, SavingsGoal, Settlement, SettlementSummary, Trip } from "../types/models";
 import { daysTogether } from "./dates";
 
 export type ExpenseResponsibility = {
@@ -15,6 +15,10 @@ export function sum(values: (number | null | undefined)[]): number {
   return values.reduce<number>((acc, value) => acc + Number(value ?? 0), 0);
 }
 
+export function moneyRound(value: number): number {
+  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
 export function plannedByTrip(tripId: string, plannedExpenses: PlannedExpense[]) {
   return sum(plannedExpenses.filter((item) => item.trip_id === tripId).map((item) => item.planned_amount));
 }
@@ -23,17 +27,20 @@ export function actualByTrip(tripId: string, expenses: Expense[]) {
   return sum(expenses.filter((item) => item.trip_id === tripId).map((item) => item.amount));
 }
 
-export function calculateExpenseResponsibility(expense: Pick<Expense, "amount" | "paid_by_person" | "beneficiary_person" | "should_split" | "split_pedro_percent" | "split_camilly_percent">): ExpenseResponsibility {
+export function calculateExpenseResponsibility(expense: Pick<Expense, "amount" | "paid_by_person" | "beneficiary_person" | "should_split" | "split_pedro_percent" | "split_camilly_percent" | "is_reimbursable">): ExpenseResponsibility {
   const amount = Number(expense.amount ?? 0);
   let pedroResponsibility = 0;
   let camillyResponsibility = 0;
 
-  if (expense.should_split) {
+  if (expense.is_reimbursable === false) {
+    pedroResponsibility = expense.paid_by_person === "pedro" ? amount : 0;
+    camillyResponsibility = expense.paid_by_person === "camilly" ? amount : 0;
+  } else if (expense.should_split) {
     pedroResponsibility = amount * (Number(expense.split_pedro_percent ?? 0) / 100);
     camillyResponsibility = amount * (Number(expense.split_camilly_percent ?? 0) / 100);
-  } else if (expense.beneficiary_person === "pedro" || expense.paid_by_person === "pedro") {
+  } else if (expense.beneficiary_person === "pedro") {
     pedroResponsibility = amount;
-  } else if (expense.beneficiary_person === "camilly" || expense.paid_by_person === "camilly") {
+  } else if (expense.beneficiary_person === "camilly") {
     camillyResponsibility = amount;
   } else {
     pedroResponsibility = amount / 2;
@@ -42,21 +49,33 @@ export function calculateExpenseResponsibility(expense: Pick<Expense, "amount" |
 
   const paidByPedro = expense.paid_by_person === "pedro" ? amount : 0;
   const paidByCamilly = expense.paid_by_person === "camilly" ? amount : 0;
-  const pedroBalance = paidByPedro - pedroResponsibility;
-  const camillyBalance = paidByCamilly - camillyResponsibility;
+  const pedroBalance = moneyRound(paidByPedro - pedroResponsibility);
+  const camillyBalance = moneyRound(paidByCamilly - camillyResponsibility);
 
-  return { pedroResponsibility, camillyResponsibility, paidByPedro, paidByCamilly, pedroBalance, camillyBalance };
+  return {
+    pedroResponsibility: moneyRound(pedroResponsibility),
+    camillyResponsibility: moneyRound(camillyResponsibility),
+    paidByPedro: moneyRound(paidByPedro),
+    paidByCamilly: moneyRound(paidByCamilly),
+    pedroBalance,
+    camillyBalance
+  };
 }
 
-export function calculateSettlement(expenses: Expense[]) {
+export function calculateSettlement(expenses: Expense[], settlements: Settlement[] = []): SettlementSummary {
   const totals = expenses.map(calculateExpenseResponsibility);
-  const totalPaidByPedro = sum(totals.map((item) => item.paidByPedro));
-  const totalPaidByCamilly = sum(totals.map((item) => item.paidByCamilly));
-  const pedroResponsibility = sum(totals.map((item) => item.pedroResponsibility));
-  const camillyResponsibility = sum(totals.map((item) => item.camillyResponsibility));
-  const pedroBalance = totalPaidByPedro - pedroResponsibility;
-  const camillyBalance = totalPaidByCamilly - camillyResponsibility;
-  const amount = Math.abs(pedroBalance);
+  const totalPaidByPedro = moneyRound(sum(totals.map((item) => item.paidByPedro)));
+  const totalPaidByCamilly = moneyRound(sum(totals.map((item) => item.paidByCamilly)));
+  const pedroResponsibility = moneyRound(sum(totals.map((item) => item.pedroResponsibility)));
+  const camillyResponsibility = moneyRound(sum(totals.map((item) => item.camillyResponsibility)));
+  const completedSettlements = settlements.filter((item) => item.status === "concluido" || item.status === "pago");
+  const totalSettledByPedro = moneyRound(sum(completedSettlements.filter((item) => item.payer_person === "pedro").map((item) => item.amount)));
+  const totalSettledByCamilly = moneyRound(sum(completedSettlements.filter((item) => item.payer_person === "camilly").map((item) => item.amount)));
+  const totalReceivedByPedro = moneyRound(sum(completedSettlements.filter((item) => item.receiver_person === "pedro").map((item) => item.amount)));
+  const totalReceivedByCamilly = moneyRound(sum(completedSettlements.filter((item) => item.receiver_person === "camilly").map((item) => item.amount)));
+  const pedroBalance = moneyRound(totalPaidByPedro + totalSettledByPedro - totalReceivedByPedro - pedroResponsibility);
+  const camillyBalance = moneyRound(totalPaidByCamilly + totalSettledByCamilly - totalReceivedByCamilly - camillyResponsibility);
+  const amount = moneyRound(Math.abs(pedroBalance));
 
   if (Math.abs(pedroBalance) < 0.01 && Math.abs(camillyBalance) < 0.01) {
     return {
@@ -64,6 +83,8 @@ export function calculateSettlement(expenses: Expense[]) {
       totalPaidByCamilly,
       pedroResponsibility,
       camillyResponsibility,
+      totalSettledByPedro,
+      totalSettledByCamilly,
       pedroBalance,
       camillyBalance,
       payer: null,
@@ -79,6 +100,8 @@ export function calculateSettlement(expenses: Expense[]) {
       totalPaidByCamilly,
       pedroResponsibility,
       camillyResponsibility,
+      totalSettledByPedro,
+      totalSettledByCamilly,
       pedroBalance,
       camillyBalance,
       payer: "camilly" as const,
@@ -93,6 +116,8 @@ export function calculateSettlement(expenses: Expense[]) {
     totalPaidByCamilly,
     pedroResponsibility,
     camillyResponsibility,
+    totalSettledByPedro,
+    totalSettledByCamilly,
     pedroBalance,
     camillyBalance,
     payer: "pedro" as const,
@@ -213,10 +238,11 @@ export function smartAlerts(params: {
   checklistItems: ChecklistItem[];
   installments: Installment[];
   savingsGoals: SavingsGoal[];
+  settlements?: Settlement[];
 }) {
   const alerts: { tone: "warning" | "danger" | "success"; message: string }[] = [];
   const now = new Date();
-  const settlement = calculateSettlement(params.expenses);
+  const settlement = calculateSettlement(params.expenses, params.settlements ?? []);
 
   params.trips.forEach((trip) => {
     const summary = tripSummary(trip, params.expenses, params.plannedExpenses);

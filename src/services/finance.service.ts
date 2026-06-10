@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { defaultCategoryNames } from "../constants/categories";
 import type { Database } from "../types/database.types";
 import type {
   Category,
@@ -73,57 +72,14 @@ export async function setupProfileAndCouple(input: {
   personKey: "pedro" | "camilly";
   coupleName: string;
 }) {
-  const { error: profileError } = await supabase.from("profiles").upsert({
-    user_id: input.userId,
-    full_name: input.fullName,
-    display_name: input.displayName,
-    person_key: input.personKey
+  const { data: coupleId, error } = await supabase.rpc("create_workspace", {
+    p_full_name: input.fullName,
+    p_display_name: input.displayName,
+    p_person_key: input.personKey,
+    p_couple_name: input.coupleName
   });
-  raise(profileError, "Não foi possível salvar o perfil.");
-
-  // Gera o UUID no cliente para evitar o erro de select com RLS (já que o usuário ainda não é membro)
-  const coupleId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0, v = c === "x" ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-
-  const { error: coupleError } = await supabase
-    .from("couples")
-    .insert({
-      id: coupleId,
-      name: input.coupleName,
-      created_by: input.userId,
-      default_currency: "BRL",
-      default_split_pedro: 50,
-      default_split_camilly: 50,
-      monthly_budget_pedro: 2200,
-      monthly_budget_camilly: 1800,
-      monthly_budget_shared: 4000,
-      emergency_reserve_percent: 12
-    });
-  raise(coupleError, "Não foi possível criar o espaço do casal.");
-
-  const { error: memberError } = await supabase.from("couple_members").insert({
-    couple_id: coupleId,
-    user_id: input.userId,
-    role: "admin",
-    person_key: input.personKey
-  });
-  raise(memberError, "Não foi possível vincular seu usuário ao casal.");
-
-  const { error: categoryError } = await supabase.from("categories").insert(
-    defaultCategoryNames.map((name, index) => ({
-      couple_id: coupleId,
-      name,
-      type: "expense",
-      icon: index === 0 ? "plane" : index === 3 ? "utensils" : index === 4 ? "heart" : "tag",
-      color: ["#4779C4", "#7C8DD8", "#8A6FAE", "#2F9E65", "#C067A0", "#F59E0B"][index % 6],
-      is_default: true
-    }))
-  );
-  raise(categoryError, "Espaço criado, mas não foi possível criar categorias padrão.");
-
-  return { id: coupleId } as Couple;
+  raise(error, "Não foi possível criar o espaço do casal.");
+  return { id: coupleId, created_by: input.userId } as Couple;
 }
 
 export async function listTrips(coupleId: string) {
@@ -223,6 +179,9 @@ export async function deleteExpense(id: string) {
 }
 
 export async function uploadReceipt(coupleId: string, expenseId: string, file: { uri: string; name: string; mimeType?: string | null }) {
+  if (!expenseId || expenseId === "novo-gasto") {
+    throw new Error("Salve o gasto antes de enviar o comprovante.");
+  }
   const response = await fetch(file.uri);
   const blob = await response.blob();
   const path = `${coupleId}/${expenseId}/${Date.now()}-${file.name}`;
@@ -365,20 +324,4 @@ export async function updateProfile(userId: string, values: Partial<Profile>) {
   const { data, error } = await supabase.from("profiles").update(values).eq("user_id", userId).select("*").single();
   raise(error, "Não foi possível salvar perfil.");
   return data as Profile;
-}
-
-export async function getAppSetting(coupleId: string, key: string) {
-  const { data, error } = await supabase.from("app_settings").select("*").eq("couple_id", coupleId).eq("key", key).maybeSingle();
-  raise(error, "Nao foi possivel carregar configuracao do app.");
-  return (data?.value ?? null) as Record<string, unknown> | null;
-}
-
-export async function upsertAppSetting(coupleId: string, key: string, value: Record<string, unknown>) {
-  const { data, error } = await supabase
-    .from("app_settings")
-    .upsert({ couple_id: coupleId, key, value }, { onConflict: "couple_id,key" })
-    .select("*")
-    .single();
-  raise(error, "Nao foi possivel salvar configuracao do app.");
-  return data as { id: string; couple_id: string; key: string; value: Record<string, unknown> };
 }

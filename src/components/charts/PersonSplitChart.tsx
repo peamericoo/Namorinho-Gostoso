@@ -2,11 +2,11 @@ import { StyleSheet, Text, View } from "react-native";
 import { theme } from "../../constants/theme";
 import { calculateSettlement } from "../../lib/calculations";
 import { money } from "../../lib/formatters";
-import type { Expense } from "../../types/models";
+import type { Expense, Settlement } from "../../types/models";
 import { ChartCard } from "./ChartCard";
 
-export function PersonSplitChart({ expenses }: { expenses: Expense[] }) {
-  const settlement = calculateSettlement(expenses);
+export function PersonSplitChart({ expenses, settlements = [] }: { expenses: Expense[]; settlements?: Settlement[] }) {
+  const settlement = calculateSettlement(expenses, settlements);
   const total = Math.max(settlement.totalPaidByPedro + settlement.totalPaidByCamilly, 1);
   return (
     <ChartCard title="Quem pagou o quê">

@@ -1,11 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as DocumentPicker from "expo-document-picker";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import { z } from "zod";
 import { theme } from "../../constants/theme";
 import { expenseSchema } from "../../lib/validators";
-import { uploadReceipt } from "../../services/finance.service";
+import { updateExpense, uploadReceipt } from "../../services/finance.service";
 import type { Category, Expense, Trip } from "../../types/models";
 import { Button } from "../ui/Button";
 import { DateInput } from "../ui/DateInput";
@@ -23,15 +24,18 @@ export function ExpenseForm({
   categories,
   initialValues,
   onSubmit,
+  afterSubmit,
   loading
 }: {
   coupleId: string;
   trips: Trip[];
   categories: Category[];
   initialValues?: Partial<Expense>;
-  onSubmit: (values: ExpenseFormValues) => Promise<Expense | void> | void;
+  onSubmit: (values: ExpenseFormValues) => Promise<Expense>;
+  afterSubmit?: () => void;
   loading?: boolean;
 }) {
+  const [pendingReceipt, setPendingReceipt] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const form = useForm<ExpenseFormInput, unknown, ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
@@ -64,12 +68,28 @@ export function ExpenseForm({
     const result = await DocumentPicker.getDocumentAsync({ type: ["image/*", "application/pdf"], copyToCacheDirectory: true });
     if (result.canceled) return;
     const asset = result.assets[0];
-    const path = await uploadReceipt(coupleId, initialValues?.id ?? "novo-gasto", {
-      uri: asset.uri,
-      name: asset.name,
-      mimeType: asset.mimeType
-    });
-    form.setValue("receipt_url", path);
+    if (!initialValues?.id) {
+      setPendingReceipt(asset);
+      form.setValue("receipt_url", asset.name);
+      return;
+    }
+    const path = await uploadReceipt(coupleId, initialValues.id, { uri: asset.uri, name: asset.name, mimeType: asset.mimeType });
+    form.setValue("receipt_url", path, { shouldDirty: true });
+  }
+
+  async function submit(values: ExpenseFormValues) {
+    const saved = await onSubmit(pendingReceipt ? { ...values, receipt_url: null } : values);
+    if (pendingReceipt) {
+      const path = await uploadReceipt(coupleId, saved.id, {
+        uri: pendingReceipt.uri,
+        name: pendingReceipt.name,
+        mimeType: pendingReceipt.mimeType
+      });
+      await updateExpense(saved.id, { receipt_url: path });
+      form.setValue("receipt_url", path);
+      setPendingReceipt(null);
+    }
+    afterSubmit?.();
   }
 
   return (
@@ -105,7 +125,7 @@ export function ExpenseForm({
       <Controller control={form.control} name="receipt_url" render={({ field }) => <Input label="Comprovante" value={field.value ?? ""} onChangeText={field.onChange} autoCapitalize="none" />} />
       <Button title="Enviar comprovante" variant="secondary" onPress={attachReceipt} />
       <Controller control={form.control} name="notes" render={({ field }) => <Input label="Observações" value={field.value ?? ""} onChangeText={field.onChange} multiline />} />
-      <Button title="Salvar gasto" loading={loading} onPress={form.handleSubmit(async (values) => onSubmit(values))} />
+      <Button title="Salvar gasto" loading={loading || form.formState.isSubmitting} onPress={form.handleSubmit(submit)} />
     </View>
   );
 }

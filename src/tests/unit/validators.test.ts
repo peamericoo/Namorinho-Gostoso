@@ -1,4 +1,23 @@
-import { expenseSchema, simulatorSchema, tripSchema } from "../../lib/validators";
+import { expenseSchema, installmentSchema, plannedExpenseSchema, simulatorSchema, tripSchema } from "../../lib/validators";
+
+const validExpense = {
+  trip_id: "trip-1",
+  spent_at: "2026-07-01",
+  paid_by_person: "pedro",
+  beneficiary_person: "ambos",
+  category_id: "cat-1",
+  cost_type: "variavel",
+  description: "Jantar",
+  amount: 200,
+  is_installment: false,
+  installment_count: 1,
+  current_installment: 1,
+  installment_amount: 200,
+  is_reimbursable: true,
+  should_split: true,
+  split_pedro_percent: 50,
+  split_camilly_percent: 50
+};
 
 describe("validadores", () => {
   it("aceita viagem válida", () => {
@@ -37,22 +56,57 @@ describe("validadores", () => {
 
   it("bloqueia divisão que não soma 100", () => {
     const result = expenseSchema.safeParse({
-      trip_id: "trip-1",
-      spent_at: "2026-07-01",
-      paid_by_person: "pedro",
-      beneficiary_person: "ambos",
-      category_id: "cat-1",
-      cost_type: "variavel",
-      description: "Jantar",
-      amount: 200,
-      is_installment: false,
-      installment_count: 1,
-      current_installment: 1,
-      installment_amount: 200,
-      is_reimbursable: true,
-      should_split: true,
+      ...validExpense,
       split_pedro_percent: 70,
       split_camilly_percent: 20
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("bloqueia parcela atual maior que total de parcelas no gasto", () => {
+    const result = expenseSchema.safeParse({
+      ...validExpense,
+      is_installment: true,
+      installment_count: 3,
+      current_installment: 4,
+      installment_amount: 66.67
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("bloqueia custo planejado fora da faixa min/max", () => {
+    const result = plannedExpenseSchema.safeParse({
+      trip_id: "trip-1",
+      owner_person: "pedro",
+      expected_date: "2026-07-01",
+      category_id: "cat-1",
+      cost_type: "variavel",
+      description: "Hospedagem",
+      planned_amount: 900,
+      min_amount: 1000,
+      max_amount: 1200,
+      probability: 100,
+      is_required: true,
+      paid_by_person: "pedro",
+      beneficiary_person: "ambos",
+      is_installment: false,
+      installment_count: 1,
+      status: "orcado"
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("bloqueia parcelamento com valor de parcela incompatível", () => {
+    const result = installmentSchema.safeParse({
+      trip_id: "trip-1",
+      responsible_person: "pedro",
+      description: "Passagem",
+      total_amount: 1000,
+      installment_count: 3,
+      installment_amount: 300,
+      current_installment: 1,
+      due_date: "2026-07-01",
+      status: "pendente"
     });
     expect(result.success).toBe(false);
   });

@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { supabase } from "../lib/supabase";
 import {
   createCategory,
   createExpense,
@@ -38,9 +40,65 @@ import {
 import type { ChecklistItem, Couple, Expense, Installment, ItineraryItem, PlannedExpense, Profile, SavingsGoal, Settlement, Trip } from "../types/models";
 import { useWorkspace } from "./useWorkspace";
 
+const realtimeSubscriptions = new Map<string, { count: number; unsubscribe: () => void }>();
+const realtimeTables = [
+  "trips",
+  "expenses",
+  "planned_expenses",
+  "settlements",
+  "checklist_items",
+  "itinerary_items",
+  "savings_goals",
+  "installments",
+  "categories",
+  "app_settings"
+];
+
 function useCoupleId() {
   const workspace = useWorkspace();
-  return workspace.data?.couple?.id ?? null;
+  const queryClient = useQueryClient();
+  const coupleId = workspace.data?.couple?.id ?? null;
+
+  useEffect(() => {
+    if (!coupleId) return;
+    const existing = realtimeSubscriptions.get(coupleId);
+    if (existing) {
+      existing.count += 1;
+      return () => {
+        const current = realtimeSubscriptions.get(coupleId);
+        if (!current) return;
+        current.count -= 1;
+        if (current.count <= 0) {
+          current.unsubscribe();
+          realtimeSubscriptions.delete(coupleId);
+        }
+      };
+    }
+
+    const channel = supabase.channel(`finance:${coupleId}`);
+    realtimeTables.forEach((table) => {
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table, filter: `couple_id=eq.${coupleId}` },
+        () => invalidateFinance(queryClient)
+      );
+    });
+    channel.on("postgres_changes", { event: "*", schema: "public", table: "subcategories" }, () => invalidateFinance(queryClient));
+    void channel.subscribe();
+    realtimeSubscriptions.set(coupleId, { count: 1, unsubscribe: () => void supabase.removeChannel(channel) });
+
+    return () => {
+      const current = realtimeSubscriptions.get(coupleId);
+      if (!current) return;
+      current.count -= 1;
+      if (current.count <= 0) {
+        current.unsubscribe();
+        realtimeSubscriptions.delete(coupleId);
+      }
+    };
+  }, [coupleId, queryClient]);
+
+  return coupleId;
 }
 
 function invalidateFinance(queryClient: ReturnType<typeof useQueryClient>) {

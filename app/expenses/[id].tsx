@@ -27,9 +27,9 @@ export default function EditExpenseScreen() {
             initialValues={expense.data}
             loading={mutations.update.isPending}
             onSubmit={async (values) => {
-              await mutations.update.mutateAsync({ id: expense.data!.id, values });
-              router.replace("/(tabs)/expenses");
+              return mutations.update.mutateAsync({ id: expense.data!.id, values });
             }}
+            afterSubmit={() => router.replace("/(tabs)/expenses")}
           />
         ) : null}
       </Card>

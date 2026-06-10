@@ -41,7 +41,7 @@ export default function DashboardScreen() {
             <KpiCard label="Meta" value={percent(data.savings.progress * 100)} tone="couple" />
           </View>
 
-          <SettlementCard expenses={data.expenses} />
+          <SettlementCard expenses={data.expenses} settlements={data.settlements} />
 
           <View style={styles.actions}>
             <Button title="Nova viagem" onPress={() => router.push("/trips/new")} style={styles.actionButton} />
@@ -63,7 +63,7 @@ export default function DashboardScreen() {
           <View style={styles.chartGrid}>
             <SpendingByCategoryChart expenses={data.expenses} categories={data.categories} />
             <PlannedVsActualChart planned={data.totalPlanned} actual={data.totalSpent} />
-            <PersonSplitChart expenses={data.expenses} />
+            <PersonSplitChart expenses={data.expenses} settlements={data.settlements} />
             <MonthlyEvolutionChart expenses={data.expenses} />
           </View>
 

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { calculateSettlement, plannedByTrip, savingsOverview, smartAlerts, sum, tripSummary } from "../lib/calculations";
-import { useChecklistItems, useExpenses, useInstallments, usePlannedExpenses, useSavingsGoals, useTrips, useCategories } from "./useFinanceData";
+import { useChecklistItems, useExpenses, useInstallments, usePlannedExpenses, useSavingsGoals, useTrips, useCategories, useSettlements } from "./useFinanceData";
 
 export function useDashboard() {
   const trips = useTrips();
@@ -10,7 +10,8 @@ export function useDashboard() {
   const savingsGoals = useSavingsGoals();
   const installments = useInstallments();
   const categories = useCategories();
-  const isLoading = trips.isLoading || expenses.isLoading || plannedExpenses.isLoading || checklistItems.isLoading || savingsGoals.isLoading || installments.isLoading;
+  const settlements = useSettlements();
+  const isLoading = trips.isLoading || expenses.isLoading || plannedExpenses.isLoading || checklistItems.isLoading || savingsGoals.isLoading || installments.isLoading || settlements.isLoading;
 
   const data = useMemo(() => {
     const tripRows = trips.data ?? [];
@@ -20,7 +21,8 @@ export function useDashboard() {
     const savingsRows = savingsGoals.data ?? [];
     const installmentRows = installments.data ?? [];
     const categoryRows = categories.data ?? [];
-    const settlement = calculateSettlement(expenseRows);
+    const settlementRows = settlements.data ?? [];
+    const settlement = calculateSettlement(expenseRows, settlementRows);
     const totalPlanned = sum(tripRows.map((trip) => trip.planned_budget || plannedByTrip(trip.id, plannedRows)));
     const totalSpent = sum(expenseRows.map((expense) => expense.amount));
     const upcomingTrip = tripRows.find((trip) => trip.status !== "concluida" && new Date(trip.start_date) >= new Date()) ?? tripRows[0];
@@ -32,6 +34,7 @@ export function useDashboard() {
       checklistItems: checklistRows,
       savingsGoals: savingsRows,
       installments: installmentRows,
+      settlements: settlementRows,
       categories: categoryRows,
       totalPlanned,
       totalSpent,
@@ -46,10 +49,11 @@ export function useDashboard() {
         plannedExpenses: plannedRows,
         checklistItems: checklistRows,
         installments: installmentRows,
-        savingsGoals: savingsRows
+        savingsGoals: savingsRows,
+        settlements: settlementRows
       })
     };
-  }, [categories.data, checklistItems.data, expenses.data, installments.data, plannedExpenses.data, savingsGoals.data, trips.data]);
+  }, [categories.data, checklistItems.data, expenses.data, installments.data, plannedExpenses.data, savingsGoals.data, settlements.data, trips.data]);
 
-  return { data, isLoading, error: trips.error || expenses.error || plannedExpenses.error };
+  return { data, isLoading, error: trips.error || expenses.error || plannedExpenses.error || settlements.error };
 }

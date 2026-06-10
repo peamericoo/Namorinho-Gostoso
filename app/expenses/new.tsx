@@ -22,9 +22,9 @@ export default function NewExpenseScreen() {
             categories={categories.data ?? []}
             loading={mutations.create.isPending}
             onSubmit={async (values) => {
-              await mutations.create.mutateAsync(values);
-              router.replace("/(tabs)/expenses");
+              return mutations.create.mutateAsync(values);
             }}
+            afterSubmit={() => router.replace("/(tabs)/expenses")}
           />
         ) : null}
       </Card>
