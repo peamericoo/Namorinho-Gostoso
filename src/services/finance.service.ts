@@ -124,8 +124,9 @@ export async function updateTrip(id: string, values: Partial<Trip>) {
 }
 
 export async function deleteTrip(id: string) {
-  const { error } = await supabase.from("trips").delete().eq("id", id);
+  const { data, error } = await supabase.from("trips").delete().eq("id", id).select("id").maybeSingle();
   raise(error, "Não foi possível excluir a viagem.");
+  if (!data) throw new Error("A viagem não foi encontrada ou você não tem permissão para excluí-la.");
 }
 
 export async function listCategories(coupleId: string) {

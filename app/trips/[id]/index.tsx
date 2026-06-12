@@ -1,10 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Alert, Linking, StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 import { AlertBanner } from "../../../src/components/ui/AlertBanner";
 import { Badge } from "../../../src/components/ui/Badge";
 import { Button } from "../../../src/components/ui/Button";
 import { Card } from "../../../src/components/ui/Card";
 import { Header } from "../../../src/components/ui/Header";
+import { AppModal } from "../../../src/components/ui/Modal";
 import { ProgressBar } from "../../../src/components/ui/ProgressBar";
 import { Screen } from "../../../src/components/ui/Screen";
 import { SettlementCard } from "../../../src/components/finance/SettlementCard";
@@ -13,6 +14,7 @@ import { actualByTrip, plannedByTrip, tripSummary } from "../../../src/lib/calcu
 import { daysTogether } from "../../../src/lib/dates";
 import { dateBR, money } from "../../../src/lib/formatters";
 import { useChecklistItems, useExpenses, useItineraryItems, usePlannedExpenses, useTrip, useTripMutations } from "../../../src/hooks/useFinanceData";
+import { useState } from "react";
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,6 +24,8 @@ export default function TripDetailScreen() {
   const checklist = useChecklistItems();
   const itinerary = useItineraryItems();
   const mutations = useTripMutations();
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   if (!trip.data) {
     return (
@@ -38,18 +42,15 @@ export default function TripDetailScreen() {
   const summary = tripSummary(trip.data, expenses.data ?? [], planned.data ?? []);
   const checklistProgress = tripChecklist.length ? tripChecklist.filter((item) => item.is_done).length / tripChecklist.length : 0;
 
-  function confirmRemove() {
-    Alert.alert("Excluir viagem", "Essa ação remove a viagem e os dados vinculados a ela.", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: async () => {
-          await mutations.remove.mutateAsync(trip.data!.id);
-          router.replace("/(tabs)/trips");
-        }
-      }
-    ]);
+  async function removeTrip() {
+    setDeleteError("");
+    try {
+      await mutations.remove.mutateAsync(trip.data!.id);
+      setConfirmDeleteOpen(false);
+      router.replace("/(tabs)/trips");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Não foi possível excluir a viagem.");
+    }
   }
 
   return (
@@ -108,8 +109,17 @@ export default function TripDetailScreen() {
 
       <View style={styles.row}>
         <Button title="Editar" onPress={() => router.push(`/trips/${trip.data?.id}/edit`)} />
-        <Button title="Excluir" variant="danger" loading={mutations.remove.isPending} onPress={confirmRemove} />
+        <Button title="Excluir" variant="danger" loading={mutations.remove.isPending} onPress={() => setConfirmDeleteOpen(true)} />
       </View>
+
+      <AppModal visible={confirmDeleteOpen} title="Excluir viagem" onClose={() => { setConfirmDeleteOpen(false); setDeleteError(""); }}>
+        <Text style={styles.meta}>Essa ação remove a viagem e também apaga os custos planejados, gastos, checklist, roteiro, acertos e parcelamentos vinculados a ela.</Text>
+        {deleteError ? <AlertBanner tone="danger" message={deleteError} /> : null}
+        <View style={styles.row}>
+          <Button title="Cancelar" variant="secondary" onPress={() => { setConfirmDeleteOpen(false); setDeleteError(""); }} />
+          <Button title="Excluir definitivamente" variant="danger" loading={mutations.remove.isPending} onPress={() => void removeTrip()} />
+        </View>
+      </AppModal>
     </Screen>
   );
 }
