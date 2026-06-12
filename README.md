@@ -2,7 +2,7 @@
 
 Aplicativo Expo + Supabase para organizar viagens, gastos, divisão de custos, metas e parcelamentos de um relacionamento à distância.
 
-Interface e dados de exemplo em português do Brasil, com foco em Pedro Américo Paletot e Camilly Queiroz.
+O projeto opera com Supabase Auth e persistência real. Não há contas, espaços ou dados financeiros de demonstração no seed local.
 
 ## Stack
 
@@ -39,28 +39,28 @@ npx expo start
 
 Use o QR Code no Expo Go ou em um development build. O layout foi pensado para iPhone 13, POCO X6 Pro e web responsivo.
 
-## Usuários demo locais
+## Contas reais
 
-Depois de `npx supabase db reset`, estes usuários já existem:
+Depois de `npx supabase db reset`, o banco local fica estruturalmente pronto, mas vazio. Crie contas reais pelo cadastro do app.
 
-- Pedro: `pedro@example.com`
-- Camilly: `camilly@example.com`
-- Senha: `relacionamento123`
+Fluxo esperado:
 
-Ao entrar com qualquer um deles, o app abre com viagens, gastos, custos planejados, checklist, roteiro, metas e parcelamentos reais no banco local.
+- A primeira pessoa se cadastra, cria o espaço e vê o código de convite em Configurações.
+- A segunda pessoa se cadastra e usa esse código para entrar no mesmo espaço.
+- Viagens, gastos, custos planejados, checklist, roteiro, metas e parcelamentos nascem somente de ações reais no app.
 
 ## Variáveis de ambiente
 
-`.env.example` já vem com URL local e anon key de desenvolvimento:
+`.env.example` traz um exemplo local de desenvolvimento:
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 EXPO_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
-Em produção, substitua pelos valores do seu projeto Supabase.
+Em qualquer ambiente usado para dados reais, configure explicitamente os valores do seu projeto Supabase. O app não possui fallback de URL ou anon key.
 
-Para recuperação de senha, configure no Supabase Auth os redirects web/mobile reais. Localmente o projeto aceita `http://localhost:19006`, `http://127.0.0.1:8081`, `planoadois://auth/login` e previews Vercel.
+Para recuperação de senha, configure no Supabase Auth os redirects web/mobile reais. Localmente o projeto aceita `http://localhost:19006`, `http://localhost:8081/auth/reset-password`, `http://127.0.0.1:8081/auth/reset-password`, `planoadois://auth/profile-setup`, `planoadois://auth/reset-password` e previews Vercel.
 
 ## Supabase
 
@@ -69,7 +69,7 @@ Arquivos principais:
 - `supabase/config.toml`: configuração local do Supabase CLI.
 - `supabase/migrations/202606080001_init.sql`: tabelas, índices, triggers, RLS e bucket privado `receipts`.
 - `supabase/migrations/202606100001_backend_audit_hardening.sql`: hardening de RLS, RPC transacional de workspace, validações de integridade e proteção administrativa.
-- `supabase/seed.sql`: usuários demo, casal, categorias, subcategorias e dados financeiros de exemplo.
+- `supabase/seed.sql`: intencionalmente vazio para impedir criação automática de dados fictícios.
 
 Comandos úteis:
 
@@ -96,7 +96,7 @@ O modelo de autorização é:
 - `membro`: pode operar dados financeiros do casal.
 - `admin`: pode gerenciar membros e excluir o casal.
 
-A criação de workspace usa a RPC transacional `create_workspace`, que cria perfil, casal, membership admin e categorias padrão em uma única operação de banco.
+A criação de workspace usa a RPC transacional `create_workspace`, que cria perfil, casal, membership admin, código de convite e categorias padrão em uma única operação de banco. A segunda conta usa a RPC `join_workspace` com o código de convite para entrar no mesmo espaço.
 
 Mais detalhes:
 
@@ -107,7 +107,7 @@ Mais detalhes:
 
 ## Funcionalidades implementadas
 
-- Login, cadastro, recuperação de senha e setup de perfil/espaço
+- Login, cadastro, recuperação de senha, troca de senha/e-mail e setup de perfil/espaço com convite
 - Dashboard com KPIs, alertas, gráficos e próxima viagem
 - Lista de viagens com busca e filtro
 - Criar, editar, detalhar e excluir viagem
@@ -213,6 +213,6 @@ Checklist detalhado: `docs/production-checklist.md`.
 ## Problemas comuns
 
 - `npx supabase start` exige Docker Desktop rodando.
-- Se o login demo falhar, rode `npx supabase db reset` novamente.
+- Se o login falhar, confirme e-mail/senha reais, redirects do Supabase Auth e variáveis `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 - Se o app web não conectar, confira `.env` e reinicie `npm run web`.
 - Em dispositivo físico, se `127.0.0.1` não alcançar o Supabase local, use o IP da máquina na rede em `EXPO_PUBLIC_SUPABASE_URL`.

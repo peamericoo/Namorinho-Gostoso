@@ -34,10 +34,7 @@ npx supabase db reset
 npm run dev
 ```
 
-Login demo apos reset:
-
-- `pedro@example.com`
-- `relacionamento123`
+Depois do reset, crie contas reais pelo fluxo de cadastro. O seed local não cria usuários, espaços ou dados financeiros.
 
 ## Comandos finais executados com sucesso
 

@@ -13,8 +13,6 @@
     "test": "jest --runInBand",
     "supabase:start": "supabase start",
     "supabase:reset": "supabase db reset",
-    "cloud:fix-auth": "node scripts/fix-cloud-auth-users.cjs",
-    "cloud:first-access": "node scripts/reset-cloud-first-access.cjs",
     "export:web": "expo export --platform web"
   },
   "dependencies": {

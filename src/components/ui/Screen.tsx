@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
+import { useFocusEffect } from "expo-router";
 import { Animated, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { appMaxWidth, theme } from "../../constants/theme";
@@ -15,21 +16,29 @@ export function Screen({ children, scroll = true, refreshing = false, onRefresh 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: theme.transition.base,
-        useNativeDriver: true
-      }),
-      Animated.spring(translateY, {
-        toValue: 0,
-        speed: 18,
-        bounciness: 5,
-        useNativeDriver: true
-      })
-    ]).start();
-  }, [opacity, translateY]);
+  useFocusEffect(
+    useCallback(() => {
+      opacity.stopAnimation();
+      translateY.stopAnimation();
+      opacity.setValue(0);
+      translateY.setValue(10);
+      const animation = Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: theme.transition.base,
+          useNativeDriver: true
+        }),
+        Animated.spring(translateY, {
+          toValue: 0,
+          speed: 18,
+          bounciness: 5,
+          useNativeDriver: true
+        })
+      ]);
+      animation.start();
+      return () => animation.stop();
+    }, [opacity, translateY])
+  );
 
   const content = (
     <Animated.View style={[styles.content, { opacity, transform: [{ translateY }] }]}>

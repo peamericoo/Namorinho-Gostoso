@@ -49,6 +49,15 @@ export type Database = {
         };
         Returns: string;
       };
+      join_workspace: {
+        Args: {
+          p_full_name: string;
+          p_display_name: string;
+          p_person_key: string;
+          p_invite_code: string;
+        };
+        Returns: string;
+      };
     };
     Enums: Record<string, never>;
   };
