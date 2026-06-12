@@ -1,6 +1,6 @@
 import { Redirect, Tabs } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
-import { BarChart3, Calculator, CircleDollarSign, Map, MoreHorizontal } from "lucide-react-native";
+import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
+import { BarChart3, Calculator, CircleDollarSign, Map, MoreHorizontal, type LucideIcon } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../src/constants/theme";
 import { useAuth } from "../../src/hooks/useAuth";
@@ -10,11 +10,19 @@ const BASE_TAB_BAR_HEIGHT = 64;
 const MIN_TAB_BAR_BOTTOM_PADDING = 8;
 const TAB_BAR_TOP_PADDING = 8;
 
+function TabIcon({ Icon, color, focused, size }: { Icon: LucideIcon; color: string; focused: boolean; size: number }) {
+  return (
+    <View style={[styles.iconPill, focused && styles.iconPillActive]}>
+      <Icon color={color} size={focused ? size + 2 : size} strokeWidth={focused ? 2.8 : 2.35} />
+    </View>
+  );
+}
+
 export default function TabsLayout() {
   const auth = useAuth();
   const workspace = useWorkspace();
   const insets = useSafeAreaInsets();
-  const bottomPadding = Math.max(insets.bottom, MIN_TAB_BAR_BOTTOM_PADDING);
+  const bottomPadding = Platform.OS === "web" ? MIN_TAB_BAR_BOTTOM_PADDING : Math.max(insets.bottom, MIN_TAB_BAR_BOTTOM_PADDING);
   const tabBarHeight = BASE_TAB_BAR_HEIGHT + bottomPadding;
 
   if (auth.isLoading || workspace.isLoading) {
@@ -34,6 +42,8 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: theme.colors.coupleStrong,
         tabBarInactiveTintColor: theme.colors.muted,
+        tabBarActiveBackgroundColor: theme.colors.surfaceAlt,
+        tabBarInactiveBackgroundColor: "transparent",
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.line,
@@ -42,15 +52,17 @@ export default function TabsLayout() {
           minHeight: tabBarHeight,
           paddingTop: TAB_BAR_TOP_PADDING,
           paddingBottom: bottomPadding,
-          overflow: "visible"
+          overflow: "visible",
+          ...styles.tabBarDepth
         },
         tabBarItemStyle: {
           borderRadius: theme.radius.md,
-          marginHorizontal: 3,
+          marginHorizontal: 4,
           marginTop: 0,
           marginBottom: 0,
           paddingTop: 4,
-          paddingBottom: 2
+          paddingBottom: 2,
+          overflow: "hidden"
         },
         tabBarIconStyle: { marginTop: 0, marginBottom: 1 },
         tabBarLabelStyle: {
@@ -64,11 +76,37 @@ export default function TabsLayout() {
         tabBarHideOnKeyboard: true
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Painel", tabBarIcon: ({ color, size }) => <BarChart3 color={color} size={size} /> }} />
-      <Tabs.Screen name="trips" options={{ title: "Viagens", tabBarIcon: ({ color, size }) => <Map color={color} size={size} /> }} />
-      <Tabs.Screen name="expenses" options={{ title: "Gastos", tabBarIcon: ({ color, size }) => <CircleDollarSign color={color} size={size} /> }} />
-      <Tabs.Screen name="simulator" options={{ title: "Simulador", tabBarIcon: ({ color, size }) => <Calculator color={color} size={size} /> }} />
-      <Tabs.Screen name="more" options={{ title: "Mais", tabBarIcon: ({ color, size }) => <MoreHorizontal color={color} size={size} /> }} />
+      <Tabs.Screen name="index" options={{ title: "Painel", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={BarChart3} color={color} focused={focused} size={size} /> }} />
+      <Tabs.Screen name="trips" options={{ title: "Viagens", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Map} color={color} focused={focused} size={size} /> }} />
+      <Tabs.Screen name="expenses" options={{ title: "Gastos", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={CircleDollarSign} color={color} focused={focused} size={size} /> }} />
+      <Tabs.Screen name="simulator" options={{ title: "Simulador", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Calculator} color={color} focused={focused} size={size} /> }} />
+      <Tabs.Screen name="more" options={{ title: "Mais", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={MoreHorizontal} color={color} focused={focused} size={size} /> }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBarDepth: Platform.select({
+    web: {
+      boxShadow: "0 -10px 24px rgba(71, 85, 105, 0.08)"
+    },
+    default: {
+      shadowColor: "#334155",
+      shadowOpacity: 0.08,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 10
+    }
+  }),
+  iconPill: {
+    width: 34,
+    height: 28,
+    borderRadius: theme.radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    transform: [{ scale: 1 }]
+  },
+  iconPillActive: {
+    transform: [{ scale: 1.04 }]
+  }
+});
