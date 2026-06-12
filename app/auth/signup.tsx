@@ -1,16 +1,12 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Text } from "react-native";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useAuth } from "../../src/hooks/useAuth";
+import { AuthLayout, AuthMessage, AuthTextLink } from "../../src/components/auth/AuthLayout";
 import { Button } from "../../src/components/ui/Button";
-import { Card } from "../../src/components/ui/Card";
 import { Input } from "../../src/components/ui/Input";
-import { Screen } from "../../src/components/ui/Screen";
-import { Header } from "../../src/components/ui/Header";
-import { theme } from "../../src/constants/theme";
+import { useAuth } from "../../src/hooks/useAuth";
 
 const schema = z
   .object({
@@ -28,7 +24,7 @@ export default function SignupScreen() {
   async function submit(values: z.infer<typeof schema>) {
     setError("");
     try {
-      await auth.signUp(values.email, values.password);
+      await auth.signUp(values.email.trim(), values.password);
       router.replace("/auth/profile-setup");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível criar a conta.");
@@ -36,16 +32,38 @@ export default function SignupScreen() {
   }
 
   return (
-    <Screen>
-      <Header title="Criar conta" subtitle="Depois você cria o espaço compartilhado do casal." back onBack={() => router.replace("/auth/login")} />
-      <Card>
-        <Controller control={form.control} name="email" render={({ field }) => <Input label="E-mail" value={field.value} onChangeText={field.onChange} autoCapitalize="none" error={form.formState.errors.email?.message} />} />
-        <Controller control={form.control} name="password" render={({ field }) => <Input label="Senha" value={field.value} onChangeText={field.onChange} secureTextEntry error={form.formState.errors.password?.message} />} />
-        <Controller control={form.control} name="confirm" render={({ field }) => <Input label="Confirmar senha" value={field.value} onChangeText={field.onChange} secureTextEntry error={form.formState.errors.confirm?.message} />} />
-        {error ? <Text style={{ color: theme.colors.dangerStrong, fontWeight: "800" }}>{error}</Text> : null}
-        <Button title="Criar conta" loading={form.formState.isSubmitting} onPress={form.handleSubmit(submit)} />
-        <Button title="Voltar para login" variant="ghost" onPress={() => router.replace("/auth/login")} />
-      </Card>
-    </Screen>
+    <AuthLayout
+      eyebrow="novo começo"
+      title="Crie uma base para os planos."
+      subtitle="O cadastro abre o caminho para organizar visitas, economias e decisões sem transformar afeto em ruído."
+      variant="signup"
+      backLabel="Já tenho conta"
+      onBack={() => router.replace("/auth/login")}
+      footer={<AuthTextLink onPress={() => router.replace("/auth/login")}>Voltar para login</AuthTextLink>}
+    >
+      <Controller
+        control={form.control}
+        name="email"
+        render={({ field }) => (
+          <Input label="E-mail" value={field.value} onChangeText={field.onChange} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" error={form.formState.errors.email?.message} required />
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="password"
+        render={({ field }) => (
+          <Input label="Senha" value={field.value} onChangeText={field.onChange} secureTextEntry autoComplete="new-password" textContentType="newPassword" error={form.formState.errors.password?.message} required />
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="confirm"
+        render={({ field }) => (
+          <Input label="Confirmar senha" value={field.value} onChangeText={field.onChange} secureTextEntry autoComplete="new-password" textContentType="newPassword" error={form.formState.errors.confirm?.message} required />
+        )}
+      />
+      {error ? <AuthMessage>{error}</AuthMessage> : null}
+      <Button title="Criar conta" loading={form.formState.isSubmitting} onPress={form.handleSubmit(submit)} />
+    </AuthLayout>
   );
 }

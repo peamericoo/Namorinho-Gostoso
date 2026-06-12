@@ -31,7 +31,7 @@ A aplicacao usa Expo/React Native como cliente e Supabase como backend efetivo: 
 
 ## Plano de acao recomendado
 
-1. Aplicar migrations em ambiente local e validar seed.
+1. Aplicar migrations em ambiente local e validar que o seed permanece vazio.
 2. Rodar `npm run typecheck`, `npm run lint` e `npm test -- --runInBand`.
 3. Validar manualmente signup/setup, gasto com comprovante, acerto e dois usuarios simultaneos.
 4. Antes de producao, checar dados duplicados em `couple_members(user_id)`.

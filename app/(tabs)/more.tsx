@@ -33,7 +33,13 @@ export default function MoreScreen() {
           </Card>
         ))}
       </View>
-      <Button title="Sair" variant="danger" onPress={auth.signOut} />
+      <Button
+        title="Sair"
+        variant="danger"
+        onPress={() => {
+          void auth.signOut().then(() => router.replace("/auth/login"));
+        }}
+      />
     </Screen>
   );
 }

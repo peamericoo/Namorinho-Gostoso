@@ -16,6 +16,7 @@ export type Couple = {
   id: string;
   name: string;
   created_by: string;
+  invite_code?: string | null;
   default_currency: string;
   default_split_pedro: number;
   default_split_camilly: number;

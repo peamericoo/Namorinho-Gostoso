@@ -6,7 +6,7 @@ import { Screen } from "../src/components/ui/Screen";
 import { theme } from "../src/constants/theme";
 
 const sections = [
-  ["Como começar", "Entre com o usuário demo ou crie sua conta, depois revise Configurações e veja os dados de exemplo."],
+  ["Como começar", "Crie sua conta real, monte um espaço novo ou entre com o código de convite, depois revise Configurações."],
   ["Criar viagem", "Use Viagens > Adicionar. Datas, cidades, orçamento e links alimentam o Painel."],
   ["Registrar gasto", "Use Gastos > Adicionar. Informe quem pagou, valor, categoria e percentuais de divisão."],
   ["Dividir custos", "Quando Deve dividir está ativo, Pedro e Camilly dividem pelo percentual informado."],

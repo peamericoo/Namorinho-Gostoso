@@ -3,11 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database.types";
 import { secureSessionStorage } from "./secureStorage";
 
-const localAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTk1NzM0NTYwMH0.L_pbFfK68Bo1JVnODnmQWuWVLqLV7kJx51Eve-0qs1Q";
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || localAnonKey;
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Configure EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY para conectar ao Supabase real.");
+}
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {

@@ -1,15 +1,12 @@
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { theme } from "../../src/constants/theme";
-import { useAuth } from "../../src/hooks/useAuth";
+import { AuthLayout, AuthMessage, AuthTextLink } from "../../src/components/auth/AuthLayout";
 import { Button } from "../../src/components/ui/Button";
-import { Card } from "../../src/components/ui/Card";
 import { Input } from "../../src/components/ui/Input";
-import { Screen } from "../../src/components/ui/Screen";
+import { useAuth } from "../../src/hooks/useAuth";
 
 const schema = z.object({
   email: z.string().email("Informe um e-mail válido."),
@@ -21,13 +18,13 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "paletot.business@gmail.com", password: "" }
+    defaultValues: { email: "", password: "" }
   });
 
   async function submit(values: z.infer<typeof schema>) {
     setError("");
     try {
-      await auth.signIn(values.email, values.password);
+      await auth.signIn(values.email.trim(), values.password);
       router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível entrar.");
@@ -35,32 +32,53 @@ export default function LoginScreen() {
   }
 
   return (
-    <Screen>
-      <View style={styles.hero}>
-        <Text style={styles.logo}>Plano a Dois</Text>
-        <Text style={styles.subtitle}>Viagens, gastos e acertos de Pedro e Camilly em um só lugar.</Text>
-      </View>
-      <Card>
-        <Controller control={form.control} name="email" render={({ field }) => <Input label="E-mail" value={field.value} onChangeText={field.onChange} autoCapitalize="none" keyboardType="email-address" error={form.formState.errors.email?.message} />} />
-        <Controller control={form.control} name="password" render={({ field }) => <Input label="Senha" value={field.value} onChangeText={field.onChange} secureTextEntry error={form.formState.errors.password?.message} />} />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button title="Entrar" onPress={form.handleSubmit(submit)} loading={form.formState.isSubmitting} />
-        <View style={styles.links}>
-          <Link href="/auth/signup" style={styles.link}>Criar conta</Link>
-          <Link href="/auth/forgot-password" style={styles.link}>Esqueci minha senha</Link>
-        </View>
-        <Text style={styles.demo}>Primeiro acesso: entre com o e-mail principal e a senha combinada.</Text>
-      </Card>
-    </Screen>
+    <AuthLayout
+      eyebrow="bem-vindos de volta"
+      title="Entre no espaço de vocês."
+      subtitle="Acesse viagens, combinados financeiros, memórias em construção e próximos passos com a calma que uma relação merece."
+      variant="signin"
+      footer={
+        <>
+          <AuthTextLink onPress={() => router.push("/auth/signup")}>Criar um novo espaço</AuthTextLink>
+          <AuthTextLink onPress={() => router.push("/auth/forgot-password")}>Recuperar acesso</AuthTextLink>
+        </>
+      }
+    >
+      <Controller
+        control={form.control}
+        name="email"
+        render={({ field }) => (
+          <Input
+            label="E-mail"
+            value={field.value}
+            onChangeText={field.onChange}
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            error={form.formState.errors.email?.message}
+            required
+          />
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="password"
+        render={({ field }) => (
+          <Input
+            label="Senha"
+            value={field.value}
+            onChangeText={field.onChange}
+            secureTextEntry
+            autoComplete="password"
+            textContentType="password"
+            error={form.formState.errors.password?.message}
+            required
+          />
+        )}
+      />
+      {error ? <AuthMessage>{error}</AuthMessage> : null}
+      <Button title="Entrar" onPress={form.handleSubmit(submit)} loading={form.formState.isSubmitting} />
+    </AuthLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  hero: { gap: theme.spacing.sm, paddingVertical: theme.spacing.xl },
-  logo: { color: theme.colors.text, fontSize: 34, fontWeight: "900", textAlign: "center" },
-  subtitle: { color: theme.colors.muted, textAlign: "center", fontSize: 16, lineHeight: 23 },
-  links: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: theme.spacing.md },
-  link: { color: theme.colors.coupleStrong, fontWeight: "900" },
-  error: { color: theme.colors.dangerStrong, fontWeight: "800" },
-  demo: { color: theme.colors.muted, fontWeight: "700", textAlign: "center" }
-});

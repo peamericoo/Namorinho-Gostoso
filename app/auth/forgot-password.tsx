@@ -1,36 +1,52 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Text } from "react-native";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useAuth } from "../../src/hooks/useAuth";
+import { AuthLayout, AuthMessage, AuthTextLink } from "../../src/components/auth/AuthLayout";
 import { Button } from "../../src/components/ui/Button";
-import { Card } from "../../src/components/ui/Card";
-import { Header } from "../../src/components/ui/Header";
 import { Input } from "../../src/components/ui/Input";
-import { Screen } from "../../src/components/ui/Screen";
-import { theme } from "../../src/constants/theme";
+import { useAuth } from "../../src/hooks/useAuth";
 
 const schema = z.object({ email: z.string().email("Informe um e-mail válido.") });
 
 export default function ForgotPasswordScreen() {
   const auth = useAuth();
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { email: "" } });
+
   async function submit(values: z.infer<typeof schema>) {
-    await auth.resetPassword(values.email);
-    setMessage("Se o e-mail existir, enviaremos as instruções de recuperação.");
+    setMessage("");
+    setError("");
+    try {
+      await auth.resetPassword(values.email.trim());
+      setMessage("Se o e-mail existir, enviaremos as instruções de recuperação.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível enviar as instruções.");
+    }
   }
+
   return (
-    <Screen>
-      <Header title="Recuperar senha" subtitle="Informe o e-mail usado no app." back onBack={() => router.replace("/auth/login")} />
-      <Card>
-        <Controller control={form.control} name="email" render={({ field }) => <Input label="E-mail" value={field.value} onChangeText={field.onChange} autoCapitalize="none" error={form.formState.errors.email?.message} />} />
-        {message ? <Text style={{ color: theme.colors.successStrong, fontWeight: "800" }}>{message}</Text> : null}
-        <Button title="Enviar instruções" loading={form.formState.isSubmitting} onPress={form.handleSubmit(submit)} />
-        <Button title="Voltar" variant="ghost" onPress={() => router.back()} />
-      </Card>
-    </Screen>
+    <AuthLayout
+      eyebrow="recuperar acesso"
+      title="Volte sem perder o ritmo."
+      subtitle="Informe o e-mail da conta. Se ele existir, enviamos um caminho seguro para você entrar novamente."
+      variant="recovery"
+      backLabel="Voltar ao login"
+      onBack={() => router.replace("/auth/login")}
+      footer={<AuthTextLink onPress={() => router.replace("/auth/login")}>Lembrei minha senha</AuthTextLink>}
+    >
+      <Controller
+        control={form.control}
+        name="email"
+        render={({ field }) => (
+          <Input label="E-mail" value={field.value} onChangeText={field.onChange} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" error={form.formState.errors.email?.message} required />
+        )}
+      />
+      {message ? <AuthMessage tone="success">{message}</AuthMessage> : null}
+      {error ? <AuthMessage>{error}</AuthMessage> : null}
+      <Button title="Enviar instruções" loading={form.formState.isSubmitting} onPress={form.handleSubmit(submit)} />
+    </AuthLayout>
   );
 }

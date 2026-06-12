@@ -82,6 +82,23 @@ export async function setupProfileAndCouple(input: {
   return { id: coupleId, created_by: input.userId } as Couple;
 }
 
+export async function joinExistingWorkspace(input: {
+  userId: string;
+  fullName: string;
+  displayName: string;
+  personKey: "pedro" | "camilly";
+  inviteCode: string;
+}) {
+  const { data: coupleId, error } = await supabase.rpc("join_workspace", {
+    p_full_name: input.fullName,
+    p_display_name: input.displayName,
+    p_person_key: input.personKey,
+    p_invite_code: input.inviteCode
+  });
+  raise(error, "Não foi possível entrar no espaço do casal.");
+  return { id: coupleId, created_by: input.userId } as Couple;
+}
+
 export async function listTrips(coupleId: string) {
   const { data, error } = await supabase.from("trips").select("*").eq("couple_id", coupleId).order("start_date", { ascending: true });
   raise(error, "Não foi possível carregar as viagens.");
