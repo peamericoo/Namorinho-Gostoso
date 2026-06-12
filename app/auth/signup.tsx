@@ -19,12 +19,18 @@ const schema = z
 export default function SignupScreen() {
   const auth = useAuth();
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "", confirm: "" } });
 
   async function submit(values: z.infer<typeof schema>) {
     setError("");
+    setMessage("");
     try {
-      await auth.signUp(values.email.trim(), values.password);
+      const result = await auth.signUp(values.email.trim(), values.password);
+      if (!result.session) {
+        setMessage("Cadastro iniciado. Confirme seu e-mail e depois entre para criar o espaço.");
+        return;
+      }
       router.replace("/auth/profile-setup");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível criar a conta.");
@@ -62,6 +68,7 @@ export default function SignupScreen() {
           <Input label="Confirmar senha" value={field.value} onChangeText={field.onChange} secureTextEntry autoComplete="new-password" textContentType="newPassword" error={form.formState.errors.confirm?.message} required />
         )}
       />
+      {message ? <AuthMessage tone="success">{message}</AuthMessage> : null}
       {error ? <AuthMessage>{error}</AuthMessage> : null}
       <Button title="Criar conta" loading={form.formState.isSubmitting} onPress={form.handleSubmit(submit)} />
     </AuthLayout>

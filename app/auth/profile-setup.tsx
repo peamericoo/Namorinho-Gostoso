@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { AuthLayout, AuthMessage } from "../../src/components/auth/AuthLayout";
+import { AuthLayout, AuthMessage, AuthTextLink } from "../../src/components/auth/AuthLayout";
 import { Button } from "../../src/components/ui/Button";
 import { Input } from "../../src/components/ui/Input";
 import { Select } from "../../src/components/ui/Select";
@@ -28,7 +28,6 @@ const schema = z
 
 export default function ProfileSetupScreen() {
   const auth = useAuth();
-  const user = auth.user;
   const [mode, setMode] = useState<"create" | "join">("create");
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -36,7 +35,11 @@ export default function ProfileSetupScreen() {
   });
 
   async function submit(values: z.infer<typeof schema>) {
-    if (!user) return;
+    const user = auth.user;
+    if (!user) {
+      form.setError("root", { message: "Sua sessão não está ativa. Entre novamente para criar ou acessar um espaço." });
+      return;
+    }
     try {
       if (values.inviteCode) {
         await joinExistingWorkspace({ userId: user.id, fullName: values.fullName, displayName: values.displayName, personKey: values.personKey, inviteCode: values.inviteCode });
@@ -61,7 +64,9 @@ export default function ProfileSetupScreen() {
         void auth.signOut();
         router.replace("/auth/login");
       }}
+      footer={!auth.user && !auth.isLoading ? <AuthTextLink onPress={() => router.replace("/auth/login")}>Entrar com minha conta</AuthTextLink> : undefined}
     >
+      {!auth.user && !auth.isLoading ? <AuthMessage>Sua sessão não está ativa. Entre novamente para criar ou acessar um espaço.</AuthMessage> : null}
       <Button
         title={mode === "create" ? "Tenho um código de convite" : "Criar um espaço novo"}
         variant="secondary"
@@ -81,7 +86,7 @@ export default function ProfileSetupScreen() {
         <Controller control={form.control} name="inviteCode" render={({ field }) => <Input label="Código de convite" value={field.value} onChangeText={(value) => field.onChange(value.toUpperCase())} autoCapitalize="characters" error={form.formState.errors.inviteCode?.message} required />} />
       )}
       {form.formState.errors.root?.message ? <AuthMessage>{form.formState.errors.root.message}</AuthMessage> : null}
-      <Button title="Salvar e entrar" loading={form.formState.isSubmitting} onPress={form.handleSubmit(submit)} />
+      <Button title="Salvar e entrar" loading={form.formState.isSubmitting || auth.isLoading} disabled={!auth.user || auth.isLoading} onPress={form.handleSubmit(submit)} />
     </AuthLayout>
   );
 }
