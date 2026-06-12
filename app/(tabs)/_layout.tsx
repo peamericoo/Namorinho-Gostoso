@@ -1,13 +1,21 @@
 import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { BarChart3, Calculator, CircleDollarSign, Map, MoreHorizontal } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../src/constants/theme";
 import { useAuth } from "../../src/hooks/useAuth";
 import { useWorkspace } from "../../src/hooks/useWorkspace";
 
+const BASE_TAB_BAR_HEIGHT = 64;
+const MIN_TAB_BAR_BOTTOM_PADDING = 8;
+const TAB_BAR_TOP_PADDING = 8;
+
 export default function TabsLayout() {
   const auth = useAuth();
   const workspace = useWorkspace();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, MIN_TAB_BAR_BOTTOM_PADDING);
+  const tabBarHeight = BASE_TAB_BAR_HEIGHT + bottomPadding;
 
   if (auth.isLoading || workspace.isLoading) {
     return (
@@ -29,26 +37,27 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.line,
-          height: 76,
-          minHeight: 76,
-          paddingTop: 6,
-          paddingBottom: 10,
+          borderTopWidth: 1,
+          height: tabBarHeight,
+          minHeight: tabBarHeight,
+          paddingTop: TAB_BAR_TOP_PADDING,
+          paddingBottom: bottomPadding,
           overflow: "visible"
         },
         tabBarItemStyle: {
           borderRadius: theme.radius.md,
           marginHorizontal: 3,
-          marginTop: 4,
-          marginBottom: 6,
-          paddingTop: 2,
+          marginTop: 0,
+          marginBottom: 0,
+          paddingTop: 4,
           paddingBottom: 2
         },
-        tabBarIconStyle: { marginTop: 2, marginBottom: 0 },
+        tabBarIconStyle: { marginTop: 0, marginBottom: 1 },
         tabBarLabelStyle: {
           fontWeight: "800",
           fontSize: 11,
-          lineHeight: 13,
-          marginTop: -1,
+          lineHeight: 14,
+          marginTop: 0,
           marginBottom: 0,
           includeFontPadding: false
         },
