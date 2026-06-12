@@ -1,14 +1,11 @@
 import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
 import { BarChart3, Calculator, CircleDollarSign, Map, MoreHorizontal, type LucideIcon } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "../../src/constants/theme";
 import { useAuth } from "../../src/hooks/useAuth";
 import { useWorkspace } from "../../src/hooks/useWorkspace";
 
 const BASE_TAB_BAR_HEIGHT = 64;
-const MIN_TAB_BAR_BOTTOM_PADDING = 8;
-const TAB_BAR_TOP_PADDING = 8;
 
 function TabIcon({ Icon, color, focused, size }: { Icon: LucideIcon; color: string; focused: boolean; size: number }) {
   return (
@@ -21,9 +18,6 @@ function TabIcon({ Icon, color, focused, size }: { Icon: LucideIcon; color: stri
 export default function TabsLayout() {
   const auth = useAuth();
   const workspace = useWorkspace();
-  const insets = useSafeAreaInsets();
-  const bottomPadding = Platform.OS === "web" ? MIN_TAB_BAR_BOTTOM_PADDING : Math.max(insets.bottom, MIN_TAB_BAR_BOTTOM_PADDING);
-  const tabBarHeight = BASE_TAB_BAR_HEIGHT + bottomPadding;
 
   if (auth.isLoading || workspace.isLoading) {
     return (
@@ -42,26 +36,26 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: theme.colors.coupleStrong,
         tabBarInactiveTintColor: theme.colors.muted,
-        tabBarActiveBackgroundColor: theme.colors.surfaceAlt,
+        tabBarActiveBackgroundColor: theme.colors.couple,
         tabBarInactiveBackgroundColor: "transparent",
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.line,
           borderTopWidth: 1,
-          height: tabBarHeight,
-          minHeight: tabBarHeight,
-          paddingTop: TAB_BAR_TOP_PADDING,
-          paddingBottom: bottomPadding,
+          height: BASE_TAB_BAR_HEIGHT,
+          minHeight: BASE_TAB_BAR_HEIGHT,
+          paddingTop: 0,
+          paddingBottom: 0,
           overflow: "visible",
           ...styles.tabBarDepth
         },
         tabBarItemStyle: {
           borderRadius: theme.radius.md,
           marginHorizontal: 4,
-          marginTop: 0,
-          marginBottom: 0,
-          paddingTop: 4,
-          paddingBottom: 2,
+          marginTop: 6,
+          marginBottom: 6,
+          paddingTop: 0,
+          paddingBottom: 0,
           overflow: "hidden"
         },
         tabBarIconStyle: { marginTop: 0, marginBottom: 1 },
@@ -76,11 +70,51 @@ export default function TabsLayout() {
         tabBarHideOnKeyboard: true
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Painel", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={BarChart3} color={color} focused={focused} size={size} /> }} />
-      <Tabs.Screen name="trips" options={{ title: "Viagens", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Map} color={color} focused={focused} size={size} /> }} />
-      <Tabs.Screen name="expenses" options={{ title: "Gastos", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={CircleDollarSign} color={color} focused={focused} size={size} /> }} />
-      <Tabs.Screen name="simulator" options={{ title: "Simulador", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Calculator} color={color} focused={focused} size={size} /> }} />
-      <Tabs.Screen name="more" options={{ title: "Mais", tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={MoreHorizontal} color={color} focused={focused} size={size} /> }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Painel",
+          tabBarActiveTintColor: theme.colors.coupleStrong,
+          tabBarActiveBackgroundColor: theme.colors.couple,
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={BarChart3} color={color} focused={focused} size={size} />
+        }}
+      />
+      <Tabs.Screen
+        name="trips"
+        options={{
+          title: "Viagens",
+          tabBarActiveTintColor: theme.colors.pedroStrong,
+          tabBarActiveBackgroundColor: theme.colors.pedro,
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Map} color={color} focused={focused} size={size} />
+        }}
+      />
+      <Tabs.Screen
+        name="expenses"
+        options={{
+          title: "Gastos",
+          tabBarActiveTintColor: theme.colors.successStrong,
+          tabBarActiveBackgroundColor: theme.colors.success,
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={CircleDollarSign} color={color} focused={focused} size={size} />
+        }}
+      />
+      <Tabs.Screen
+        name="simulator"
+        options={{
+          title: "Simulador",
+          tabBarActiveTintColor: theme.colors.warningStrong,
+          tabBarActiveBackgroundColor: theme.colors.warning,
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Calculator} color={color} focused={focused} size={size} />
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "Mais",
+          tabBarActiveTintColor: theme.colors.camillyStrong,
+          tabBarActiveBackgroundColor: theme.colors.camilly,
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={MoreHorizontal} color={color} focused={focused} size={size} />
+        }}
+      />
     </Tabs>
   );
 }
