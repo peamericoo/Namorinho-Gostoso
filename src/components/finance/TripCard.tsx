@@ -3,6 +3,7 @@ import { labelPerson, labelStatus } from "../../constants/categories";
 import { theme } from "../../constants/theme";
 import { actualByTrip, plannedByTrip } from "../../lib/calculations";
 import { dateBR, money } from "../../lib/formatters";
+import { tripDirectionChip } from "../../lib/productFlow";
 import type { Expense, PlannedExpense, Trip } from "../../types/models";
 import { AvatarChip } from "../ui/AvatarChip";
 import { Badge } from "../ui/Badge";
@@ -24,10 +25,11 @@ export function TripCard({ trip, expenses, plannedExpenses, onPress }: { trip: T
       </View>
       <View style={styles.row}>
         <AvatarChip person={trip.traveler_person} />
+        <Badge label={tripDirectionChip(trip)} tone={trip.traveler_person === "pedro" ? "pedro" : "camilly"} />
         <Text style={styles.date}>{dateBR(trip.start_date)} - {dateBR(trip.end_date)}</Text>
       </View>
       <BudgetProgress planned={planned} actual={actual} />
-      <Text style={styles.footer}>Viajando: {labelPerson(trip.traveler_person)} · Planejado {money(planned)}</Text>
+      <Text style={styles.footer}>Quem viaja: {labelPerson(trip.traveler_person)} · Planejado {money(planned)}</Text>
     </Card>
   );
 }

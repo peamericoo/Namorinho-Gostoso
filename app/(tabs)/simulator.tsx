@@ -17,6 +17,7 @@ import { theme } from "../../src/constants/theme";
 import { useTripMutations } from "../../src/hooks/useFinanceData";
 import { calculateSimulation } from "../../src/lib/calculations";
 import { money } from "../../src/lib/formatters";
+import { buildTripDirection } from "../../src/lib/productFlow";
 import { simulatorSchema } from "../../src/lib/validators";
 
 type InputValues = z.input<typeof simulatorSchema>;
@@ -80,10 +81,10 @@ export default function SimulatorScreen() {
     const valid = await form.trigger();
     if (!valid) return;
     await trips.create.mutateAsync({
-      title: `Simulação ${values.origin_city} → ${values.destination_city}`,
+      title: `Encontro ${values.origin_city} → ${values.destination_city}`,
       traveler_person: values.traveler_person,
       host_person: values.traveler_person === "pedro" ? "camilly" : "pedro",
-      direction: values.traveler_person === "pedro" ? "Pedro visita Camilly" : "Camilly visita Pedro",
+      direction: buildTripDirection(values.traveler_person, values.traveler_person === "pedro" ? "camilly" : "pedro"),
       origin_city: values.origin_city,
       destination_city: values.destination_city,
       start_date: values.startDate,
@@ -98,14 +99,14 @@ export default function SimulatorScreen() {
 
   return (
     <Screen>
-      <Header title="Simulador" subtitle="Estime o custo antes de confirmar uma visita." />
+      <Header title="Simulador" subtitle="Estime o custo antes de confirmar o próximo encontro." />
       <Card>
-        <Controller control={form.control} name="traveler_person" render={({ field }) => <Select label="Pessoa viajando" value={field.value} onChange={field.onChange} options={personOptions} />} />
-        <Controller control={form.control} name="origin_city" render={({ field }) => <Input label="Cidade origem" value={field.value} onChangeText={field.onChange} />} />
-        <Controller control={form.control} name="destination_city" render={({ field }) => <Input label="Cidade destino" value={field.value} onChangeText={field.onChange} />} />
+        <Controller control={form.control} name="traveler_person" render={({ field }) => <Select label="Quem vai viajar?" value={field.value} onChange={field.onChange} options={personOptions} />} />
+        <Controller control={form.control} name="origin_city" render={({ field }) => <Input label="Cidade de partida" value={field.value} onChangeText={field.onChange} />} />
+        <Controller control={form.control} name="destination_city" render={({ field }) => <Input label="Cidade do encontro" value={field.value} onChangeText={field.onChange} />} />
         <View style={styles.grid}>
-          <Controller control={form.control} name="startDate" render={({ field }) => <DateInput label="Data ida" value={field.value} onChangeText={field.onChange} error={form.formState.errors.startDate?.message} />} />
-          <Controller control={form.control} name="endDate" render={({ field }) => <DateInput label="Data volta" value={field.value} onChangeText={field.onChange} error={form.formState.errors.endDate?.message} />} />
+          <Controller control={form.control} name="startDate" render={({ field }) => <DateInput label="Ida" value={field.value} onChangeText={field.onChange} error={form.formState.errors.startDate?.message} />} />
+          <Controller control={form.control} name="endDate" render={({ field }) => <DateInput label="Volta" value={field.value} onChangeText={field.onChange} error={form.formState.errors.endDate?.message} />} />
         </View>
         <Controller control={form.control} name="lodgingType" render={({ field }) => <Input label="Tipo de hospedagem" value={field.value} onChangeText={field.onChange} />} />
         {[
@@ -140,7 +141,7 @@ export default function SimulatorScreen() {
         <Text style={styles.viability}>{result.viability}</Text>
         <Text style={styles.meta}>{result.riskAlert}</Text>
         <Text style={styles.meta}>{result.suggestion}</Text>
-        <Button title="Salvar como viagem" onPress={saveAsTrip} loading={trips.create.isPending} />
+        <Button title="Salvar como encontro" onPress={saveAsTrip} loading={trips.create.isPending} />
       </Card>
       <PlannedVsActualChart planned={result.grandTotal} actual={Math.max(result.grandTotal - values.currentSavings, 0)} />
     </Screen>

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Animated, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { Animated, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { theme } from "../../constants/theme";
 
 type CardProps = {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   accessibilityLabel?: string;
 };
