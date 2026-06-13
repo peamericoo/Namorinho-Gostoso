@@ -5,6 +5,7 @@ import { ChecklistItemForm } from "../src/components/forms/ChecklistItemForm";
 import { Badge } from "../src/components/ui/Badge";
 import { Button } from "../src/components/ui/Button";
 import { Card } from "../src/components/ui/Card";
+import { DeleteButton } from "../src/components/ui/DeleteButton";
 import { Header } from "../src/components/ui/Header";
 import { AppModal } from "../src/components/ui/Modal";
 import { ProgressBar } from "../src/components/ui/ProgressBar";
@@ -44,7 +45,12 @@ export default function ChecklistScreen() {
           <View style={styles.row}>
             <Button title={item.is_done ? "Reabrir" : "Concluir"} variant="secondary" onPress={() => mutations.save.mutate({ ...item, is_done: !item.is_done, status: item.is_done ? "pendente" : "concluido" })} />
             <Button title="Editar" variant="secondary" onPress={() => { setEditing(item); setOpen(true); }} />
-            <Button title="Excluir" variant="danger" onPress={() => mutations.remove.mutate(item.id)} />
+            <DeleteButton
+              confirmTitle="Excluir item"
+              message="Essa ação remove o item do checklist desta viagem."
+              loading={mutations.remove.isPending}
+              onConfirm={() => mutations.remove.mutateAsync(item.id)}
+            />
           </View>
         </Card>
       ))}

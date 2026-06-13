@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { PlannedExpenseForm } from "../src/components/forms/PlannedExpenseForm";
 import { Button } from "../src/components/ui/Button";
 import { Card } from "../src/components/ui/Card";
+import { DeleteButton } from "../src/components/ui/DeleteButton";
 import { Header } from "../src/components/ui/Header";
 import { AppModal } from "../src/components/ui/Modal";
 import { Screen } from "../src/components/ui/Screen";
@@ -44,7 +45,12 @@ export default function PlannedExpensesScreen() {
           <Text style={styles.amount}>{money(item.planned_amount)}</Text>
           <View style={styles.row}>
             <Button title="Editar" variant="secondary" onPress={() => { setEditing(item); setOpen(true); }} />
-            <Button title="Excluir" variant="danger" onPress={() => mutations.remove.mutate(item.id)} />
+            <DeleteButton
+              confirmTitle="Excluir custo planejado"
+              message="Essa ação remove este custo previsto do planejamento financeiro."
+              loading={mutations.remove.isPending}
+              onConfirm={() => mutations.remove.mutateAsync(item.id)}
+            />
           </View>
         </Card>
       ))}

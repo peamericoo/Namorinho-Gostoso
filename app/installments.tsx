@@ -5,6 +5,7 @@ import { InstallmentForm } from "../src/components/forms/InstallmentForm";
 import { InstallmentCard } from "../src/components/finance/InstallmentCard";
 import { Button } from "../src/components/ui/Button";
 import { Card } from "../src/components/ui/Card";
+import { DeleteButton } from "../src/components/ui/DeleteButton";
 import { Header } from "../src/components/ui/Header";
 import { AppModal } from "../src/components/ui/Modal";
 import { Screen } from "../src/components/ui/Screen";
@@ -35,7 +36,12 @@ export default function InstallmentsScreen() {
           <View style={styles.row}>
             <Button title="Marcar pago" variant="secondary" onPress={() => mutations.save.mutate({ ...item, status: "pago" })} />
             <Button title="Editar" variant="secondary" onPress={() => { setEditing(item); setOpen(true); }} />
-            <Button title="Excluir" variant="danger" onPress={() => mutations.remove.mutate(item.id)} />
+            <DeleteButton
+              confirmTitle="Excluir parcelamento"
+              message="Essa ação remove o parcelamento deste planejamento."
+              loading={mutations.remove.isPending}
+              onConfirm={() => mutations.remove.mutateAsync(item.id)}
+            />
           </View>
         </Card>
       ))}

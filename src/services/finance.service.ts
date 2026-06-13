@@ -64,6 +64,12 @@ function normalizeExpenseForWrite(values: Partial<Expense>) {
   };
 }
 
+async function deleteOne(table: keyof Database["public"]["Tables"], id: string, fallback: string) {
+  const { data, error } = await supabase.from(table).delete().eq("id", id).select("id").maybeSingle();
+  raise(error, fallback);
+  if (!data) throw new Error("Registro não encontrado ou sem permissão para excluir.");
+}
+
 export const tableNames = {
   trips: "trips",
   expenses: "expenses",
@@ -199,8 +205,9 @@ export async function createCategory(coupleId: string, values: { name: string; i
 }
 
 export async function deleteCategory(id: string) {
-  const { error } = await supabase.from("categories").delete().eq("id", id).eq("is_default", false);
+  const { data, error } = await supabase.from("categories").delete().eq("id", id).eq("is_default", false).select("id").maybeSingle();
   raise(error, "Não foi possível excluir a categoria.");
+  if (!data) throw new Error("Categoria não encontrada, padrão do sistema ou sem permissão para excluir.");
 }
 
 export async function listExpenses(coupleId: string) {
@@ -232,8 +239,7 @@ export async function updateExpense(id: string, values: Partial<Expense>) {
 }
 
 export async function deleteExpense(id: string) {
-  const { error } = await supabase.from("expenses").delete().eq("id", id);
-  raise(error, "Não foi possível excluir o gasto.");
+  await deleteOne("expenses", id, "Não foi possível excluir o gasto.");
 }
 
 export async function uploadReceipt(coupleId: string, expenseId: string, file: { uri: string; name: string; mimeType?: string | null }) {
@@ -280,8 +286,7 @@ export async function updatePlannedExpense(id: string, values: Partial<PlannedEx
 }
 
 export async function deletePlannedExpense(id: string) {
-  const { error } = await supabase.from("planned_expenses").delete().eq("id", id);
-  raise(error, "Não foi possível excluir o custo planejado.");
+  await deleteOne("planned_expenses", id, "Não foi possível excluir o custo planejado.");
 }
 
 export async function listChecklistItems(coupleId: string) {
@@ -299,8 +304,7 @@ export async function upsertChecklistItem(coupleId: string, values: Partial<Chec
 }
 
 export async function deleteChecklistItem(id: string) {
-  const { error } = await supabase.from("checklist_items").delete().eq("id", id);
-  raise(error, "Não foi possível excluir o item.");
+  await deleteOne("checklist_items", id, "Não foi possível excluir o item.");
 }
 
 export async function listItineraryItems(coupleId: string) {
@@ -318,8 +322,7 @@ export async function upsertItineraryItem(coupleId: string, values: Partial<Itin
 }
 
 export async function deleteItineraryItem(id: string) {
-  const { error } = await supabase.from("itinerary_items").delete().eq("id", id);
-  raise(error, "Não foi possível excluir a atividade.");
+  await deleteOne("itinerary_items", id, "Não foi possível excluir a atividade.");
 }
 
 export async function listSavingsGoals(coupleId: string) {
@@ -337,8 +340,7 @@ export async function upsertSavingsGoal(coupleId: string, values: Partial<Saving
 }
 
 export async function deleteSavingsGoal(id: string) {
-  const { error } = await supabase.from("savings_goals").delete().eq("id", id);
-  raise(error, "Não foi possível excluir a meta.");
+  await deleteOne("savings_goals", id, "Não foi possível excluir a meta.");
 }
 
 export async function listInstallments(coupleId: string) {
@@ -356,8 +358,7 @@ export async function upsertInstallment(coupleId: string, values: Partial<Instal
 }
 
 export async function deleteInstallment(id: string) {
-  const { error } = await supabase.from("installments").delete().eq("id", id);
-  raise(error, "Não foi possível excluir o parcelamento.");
+  await deleteOne("installments", id, "Não foi possível excluir o parcelamento.");
 }
 
 export async function listSettlements(coupleId: string) {

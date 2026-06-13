@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { SavingsGoalForm } from "../src/components/forms/SavingsGoalForm";
 import { Button } from "../src/components/ui/Button";
 import { Card } from "../src/components/ui/Card";
+import { DeleteButton } from "../src/components/ui/DeleteButton";
 import { Header } from "../src/components/ui/Header";
 import { AppModal } from "../src/components/ui/Modal";
 import { ProgressBar } from "../src/components/ui/ProgressBar";
@@ -44,7 +45,12 @@ export default function SavingsScreen() {
             <Text style={styles.amount}>{money(goal.saved_amount)} de {money(goal.target_amount)}</Text>
             <View style={styles.row}>
               <Button title="Editar" variant="secondary" onPress={() => { setEditing(goal); setOpen(true); }} />
-              <Button title="Excluir" variant="danger" onPress={() => mutations.remove.mutate(goal.id)} />
+              <DeleteButton
+                confirmTitle="Excluir meta"
+                message="Essa ação remove a meta de economia e seu progresso registrado."
+                loading={mutations.remove.isPending}
+                onConfirm={() => mutations.remove.mutateAsync(goal.id)}
+              />
             </View>
           </Card>
         );

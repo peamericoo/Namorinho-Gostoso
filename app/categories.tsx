@@ -5,6 +5,7 @@ import { CategoryForm } from "../src/components/forms/CategoryForm";
 import { CategoryIcon } from "../src/components/finance/CategoryIcon";
 import { Button } from "../src/components/ui/Button";
 import { Card } from "../src/components/ui/Card";
+import { DeleteButton } from "../src/components/ui/DeleteButton";
 import { Header } from "../src/components/ui/Header";
 import { AppModal } from "../src/components/ui/Modal";
 import { Screen } from "../src/components/ui/Screen";
@@ -26,7 +27,14 @@ export default function CategoriesScreen() {
               <Text style={styles.title}>{category.name}</Text>
               <Text style={styles.meta}>{category.is_default ? "Categoria padrão" : "Categoria personalizada"}</Text>
             </View>
-            {!category.is_default ? <Button title="Excluir" variant="danger" onPress={() => mutations.remove.mutate(category.id)} /> : null}
+            {!category.is_default ? (
+              <DeleteButton
+                confirmTitle="Excluir categoria"
+                message="Essa ação remove a categoria personalizada. Gastos que já usavam essa categoria ficam sem categoria associada."
+                loading={mutations.remove.isPending}
+                onConfirm={() => mutations.remove.mutateAsync(category.id)}
+              />
+            ) : null}
           </View>
         </Card>
       ))}

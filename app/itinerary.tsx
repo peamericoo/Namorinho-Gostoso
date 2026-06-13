@@ -5,6 +5,7 @@ import { ItineraryItemForm } from "../src/components/forms/ItineraryItemForm";
 import { Badge } from "../src/components/ui/Badge";
 import { Button } from "../src/components/ui/Button";
 import { Card } from "../src/components/ui/Card";
+import { DeleteButton } from "../src/components/ui/DeleteButton";
 import { Header } from "../src/components/ui/Header";
 import { AppModal } from "../src/components/ui/Modal";
 import { Screen } from "../src/components/ui/Screen";
@@ -39,7 +40,12 @@ export default function ItineraryScreen() {
           <Text style={styles.meta}>{personName(item.responsible_person)} · Estimado {money(item.estimated_cost)} · Real {money(item.actual_cost)}</Text>
           <View style={styles.row}>
             <Button title="Editar" variant="secondary" onPress={() => { setEditing(item); setOpen(true); }} />
-            <Button title="Excluir" variant="danger" onPress={() => mutations.remove.mutate(item.id)} />
+            <DeleteButton
+              confirmTitle="Excluir atividade"
+              message="Essa ação remove a atividade do roteiro."
+              loading={mutations.remove.isPending}
+              onConfirm={() => mutations.remove.mutateAsync(item.id)}
+            />
           </View>
         </Card>
       ))}

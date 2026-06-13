@@ -1,8 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 import { ExpenseForm } from "../../src/components/forms/ExpenseForm";
-import { Button } from "../../src/components/ui/Button";
 import { Card } from "../../src/components/ui/Card";
+import { DeleteButton } from "../../src/components/ui/DeleteButton";
 import { Header } from "../../src/components/ui/Header";
 import { Screen } from "../../src/components/ui/Screen";
 import { useCategories, useExpense, useExpenseMutations, useTrips } from "../../src/hooks/useFinanceData";
@@ -34,23 +34,15 @@ export default function EditExpenseScreen() {
         ) : null}
       </Card>
       <View>
-        <Button
+        <DeleteButton
           title="Excluir gasto"
-          variant="danger"
+          confirmTitle="Excluir gasto"
+          message="Essa ação remove o gasto real e atualiza o dashboard e os acertos do casal."
           loading={mutations.remove.isPending}
-          onPress={() =>
-            Alert.alert("Excluir gasto", "Essa ação remove o gasto real.", [
-              { text: "Cancelar", style: "cancel" },
-              {
-                text: "Excluir",
-                style: "destructive",
-                onPress: async () => {
-                  await mutations.remove.mutateAsync(id);
-                  router.replace("/(tabs)/expenses");
-                }
-              }
-            ])
-          }
+          onConfirm={async () => {
+            await mutations.remove.mutateAsync(id);
+            router.replace("/(tabs)/expenses");
+          }}
         />
       </View>
     </Screen>
