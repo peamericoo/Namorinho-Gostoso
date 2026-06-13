@@ -2,6 +2,50 @@ import { z } from "zod";
 
 const required = "Preencha este campo.";
 const nonNegative = "O valor não pode ser negativo.";
+const invalidNumber = "Informe um valor numérico válido.";
+
+function parseLocalizedNumber(value: string | number) {
+  if (typeof value === "number") return value;
+
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+
+  let normalized = trimmed.replace(/\s/g, "").replace(/[R$]/g, "").replace(/[^\d,.-]/g, "");
+  if (!normalized || normalized === "-" || normalized === "," || normalized === ".") return Number.NaN;
+
+  const lastComma = normalized.lastIndexOf(",");
+  const lastDot = normalized.lastIndexOf(".");
+
+  if (lastComma >= 0 && lastDot >= 0) {
+    const decimalSeparator = lastComma > lastDot ? "," : ".";
+    const thousandSeparator = decimalSeparator === "," ? "." : ",";
+    normalized = normalized.split(thousandSeparator).join("").replace(decimalSeparator, ".");
+  } else if (lastComma >= 0) {
+    normalized = normalized.replace(/\./g, "").replace(",", ".");
+  } else if (lastDot >= 0) {
+    const parts = normalized.split(".");
+    if (parts.length > 2) {
+      normalized = parts.join("");
+    } else if (parts[1]?.length === 3 && parts[0].length <= 3) {
+      normalized = parts.join("");
+    }
+  }
+
+  return Number(normalized);
+}
+
+function emptyToNull(value: string | null | undefined) {
+  return typeof value === "string" && value.trim() === "" ? null : value ?? null;
+}
+
+const optionalStringInput = z.union([z.string(), z.null()]);
+const localizedNumber = z.union([z.string(), z.number()]).transform(parseLocalizedNumber).pipe(z.number({ error: invalidNumber }));
+const nonNegativeNumber = localizedNumber.pipe(z.number().min(0, nonNegative));
+const positiveNumber = localizedNumber.pipe(z.number().positive("O valor deve ser maior que zero."));
+const percentNumber = localizedNumber.pipe(z.number().min(0).max(100));
+const positiveInteger = localizedNumber.pipe(z.number().int().min(1));
+const optionalDate = optionalStringInput.transform(emptyToNull).optional();
+const optionalText = optionalStringInput.transform(emptyToNull).optional();
 
 export const personSchema = z.enum(["pedro", "camilly"], { error: required });
 export const personOrBothSchema = z.enum(["pedro", "camilly", "ambos"], { error: required });
@@ -25,15 +69,15 @@ export const tripSchema = z
     start_date: z.string().min(10, "Informe a data de ida."),
     end_date: z.string().min(10, "Informe a data de volta."),
     status: tripStatusSchema,
-    purpose: z.string().optional().nullable(),
-    planned_budget: z.coerce.number().min(0, nonNegative),
+    purpose: optionalText,
+    planned_budget: nonNegativeNumber,
     priority: prioritySchema,
-    tickets_url: z.string().optional().nullable(),
-    accommodation_url: z.string().optional().nullable(),
-    itinerary_url: z.string().optional().nullable(),
-    ticket_deadline: z.string().optional().nullable(),
-    accommodation_deadline: z.string().optional().nullable(),
-    notes: z.string().optional().nullable()
+    tickets_url: optionalText,
+    accommodation_url: optionalText,
+    itinerary_url: optionalText,
+    ticket_deadline: optionalDate,
+    accommodation_deadline: optionalDate,
+    notes: optionalText
   })
   .refine((data) => data.traveler_person !== data.host_person, {
     path: ["host_person"],
@@ -54,19 +98,19 @@ export const expenseSchema = z
     subcategory_id: z.string().optional().nullable(),
     cost_type: costTypeSchema,
     description: z.string().min(2, "Descreva o gasto."),
-    amount: z.coerce.number().positive("O valor deve ser maior que zero."),
-    payment_method: z.string().optional().nullable(),
-    account_label: z.string().optional().nullable(),
+    amount: positiveNumber,
+    payment_method: optionalText,
+    account_label: optionalText,
     is_installment: z.coerce.boolean(),
-    installment_count: z.coerce.number().int().min(1, "Informe ao menos 1 parcela."),
-    current_installment: z.coerce.number().int().min(1, "Informe a parcela atual."),
-    installment_amount: z.coerce.number().min(0, nonNegative),
+    installment_count: positiveInteger,
+    current_installment: positiveInteger,
+    installment_amount: nonNegativeNumber,
     is_reimbursable: z.coerce.boolean(),
     should_split: z.coerce.boolean(),
-    split_pedro_percent: z.coerce.number().min(0).max(100),
-    split_camilly_percent: z.coerce.number().min(0).max(100),
-    receipt_url: z.string().optional().nullable(),
-    notes: z.string().optional().nullable()
+    split_pedro_percent: percentNumber,
+    split_camilly_percent: percentNumber,
+    receipt_url: optionalText,
+    notes: optionalText
   })
   .refine((data) => !data.should_split || Math.round((data.split_pedro_percent + data.split_camilly_percent) * 100) / 100 === 100, {
     path: ["split_pedro_percent"],
@@ -89,23 +133,23 @@ export const plannedExpenseSchema = z
   .object({
     trip_id: z.string().min(1, "Escolha a viagem."),
     owner_person: personSchema,
-    expected_date: z.string().optional().nullable(),
+    expected_date: optionalDate,
     category_id: z.string().min(1, "Escolha a categoria."),
-    subcategory_id: z.string().optional().nullable(),
+    subcategory_id: optionalText,
     cost_type: costTypeSchema,
     description: z.string().min(2, "Descreva o custo."),
-    planned_amount: z.coerce.number().min(0, nonNegative),
-    min_amount: z.coerce.number().min(0, nonNegative),
-    max_amount: z.coerce.number().min(0, nonNegative),
-    probability: z.coerce.number().min(0).max(100),
+    planned_amount: nonNegativeNumber,
+    min_amount: nonNegativeNumber,
+    max_amount: nonNegativeNumber,
+    probability: percentNumber,
     is_required: z.coerce.boolean(),
     paid_by_person: personOrBothSchema,
     beneficiary_person: personOrBothSchema,
-    payment_method: z.string().optional().nullable(),
+    payment_method: optionalText,
     is_installment: z.coerce.boolean(),
-    installment_count: z.coerce.number().int().min(1),
+    installment_count: positiveInteger,
     status: plannedExpenseStatusSchema,
-    notes: z.string().optional().nullable()
+    notes: optionalText
   })
   .refine((data) => data.max_amount === 0 || data.min_amount <= data.max_amount, {
     path: ["max_amount"],
@@ -133,20 +177,20 @@ export const simulatorSchema = z
     startDate: z.string().min(10, required),
     endDate: z.string().min(10, required),
     lodgingType: z.string().min(2, required),
-    ticketAmount: z.coerce.number().min(0, nonNegative),
-    lodgingPerNight: z.coerce.number().min(0, nonNegative),
-    foodPerDay: z.coerce.number().min(0, nonNegative),
-    localTransportPerDay: z.coerce.number().min(0, nonNegative),
-    leisurePerDay: z.coerce.number().min(0, nonNegative),
-    giftsAmount: z.coerce.number().min(0, nonNegative),
-    beautyAmount: z.coerce.number().min(0, nonNegative),
-    groceriesAmount: z.coerce.number().min(0, nonNegative),
-    emergencyAmount: z.coerce.number().min(0, nonNegative),
-    safetyMarginPercent: z.coerce.number().min(0).max(100),
-    pedroPercent: z.coerce.number().min(0).max(100),
-    camillyPercent: z.coerce.number().min(0).max(100),
-    monthsUntilTrip: z.coerce.number().int().min(1, "Informe pelo menos 1 mês."),
-    currentSavings: z.coerce.number().min(0, nonNegative)
+    ticketAmount: nonNegativeNumber,
+    lodgingPerNight: nonNegativeNumber,
+    foodPerDay: nonNegativeNumber,
+    localTransportPerDay: nonNegativeNumber,
+    leisurePerDay: nonNegativeNumber,
+    giftsAmount: nonNegativeNumber,
+    beautyAmount: nonNegativeNumber,
+    groceriesAmount: nonNegativeNumber,
+    emergencyAmount: nonNegativeNumber,
+    safetyMarginPercent: percentNumber,
+    pedroPercent: percentNumber,
+    camillyPercent: percentNumber,
+    monthsUntilTrip: positiveInteger,
+    currentSavings: nonNegativeNumber
   })
   .refine((data) => data.endDate >= data.startDate, { path: ["endDate"], message: "A volta não pode ser antes da ida." })
   .refine((data) => Math.round((data.pedroPercent + data.camillyPercent) * 100) / 100 === 100, {
@@ -159,51 +203,51 @@ export const checklistSchema = z.object({
   title: z.string().min(2, "Informe o item."),
   category: z.string().min(2, required),
   responsible_person: personOrBothSchema,
-  due_date: z.string().optional().nullable(),
+  due_date: optionalDate,
   status: operationalStatusSchema,
   priority: prioritySchema,
   is_done: z.coerce.boolean(),
-  notes: z.string().optional().nullable()
+  notes: optionalText
 });
 
 export const itinerarySchema = z.object({
   trip_id: z.string().min(1, "Escolha a viagem."),
   date: z.string().min(10, required),
-  time: z.string().optional().nullable(),
+  time: optionalText,
   activity: z.string().min(2, "Informe a atividade."),
-  location: z.string().optional().nullable(),
-  category: z.string().optional().nullable(),
-  estimated_cost: z.coerce.number().min(0, nonNegative),
-  actual_cost: z.coerce.number().min(0, nonNegative),
+  location: optionalText,
+  category: optionalText,
+  estimated_cost: nonNegativeNumber,
+  actual_cost: nonNegativeNumber,
   responsible_person: personOrBothSchema,
   requires_booking: z.coerce.boolean(),
-  booking_url: z.string().optional().nullable(),
+  booking_url: optionalText,
   status: operationalStatusSchema,
-  notes: z.string().optional().nullable()
+  notes: optionalText
 });
 
 export const savingsGoalSchema = z.object({
   month: z.string().min(10, "Informe o mês."),
   person: personOrBothSchema,
-  trip_id: z.string().optional().nullable(),
-  target_amount: z.coerce.number().min(0, nonNegative),
-  saved_amount: z.coerce.number().min(0, nonNegative),
-  notes: z.string().optional().nullable()
+  trip_id: optionalText,
+  target_amount: nonNegativeNumber,
+  saved_amount: nonNegativeNumber,
+  notes: optionalText
 });
 
 export const installmentSchema = z
   .object({
-    trip_id: z.string().optional().nullable(),
+    trip_id: optionalText,
     responsible_person: personSchema,
     description: z.string().min(2, "Descreva o parcelamento."),
-    total_amount: z.coerce.number().min(0, nonNegative),
-    installment_count: z.coerce.number().int().min(1),
-    installment_amount: z.coerce.number().min(0, nonNegative),
-    current_installment: z.coerce.number().int().min(1),
+    total_amount: nonNegativeNumber,
+    installment_count: positiveInteger,
+    installment_amount: nonNegativeNumber,
+    current_installment: positiveInteger,
     due_date: z.string().min(10, "Informe o vencimento."),
     status: installmentStatusSchema,
-    payment_method: z.string().optional().nullable(),
-    notes: z.string().optional().nullable()
+    payment_method: optionalText,
+    notes: optionalText
   })
   .refine((data) => data.current_installment <= data.installment_count, {
     path: ["current_installment"],

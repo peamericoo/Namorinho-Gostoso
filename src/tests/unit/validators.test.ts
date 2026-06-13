@@ -72,6 +72,50 @@ describe("validadores", () => {
     expect(result.success).toBe(true);
   });
 
+  it("normaliza orçamento brasileiro e datas opcionais vazias na viagem", () => {
+    const result = tripSchema.safeParse({
+      title: "Visita com orçamento",
+      traveler_person: "pedro",
+      host_person: "camilly",
+      direction: "Pedro visita Camilly",
+      origin_city: "João Pessoa",
+      destination_city: "Cuiabá",
+      start_date: "2026-07-01",
+      end_date: "2026-07-05",
+      status: "planejada",
+      planned_budget: "1.234,56",
+      priority: "media",
+      ticket_deadline: "",
+      accommodation_deadline: ""
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.planned_budget).toBe(1234.56);
+      expect(result.data.ticket_deadline).toBeNull();
+      expect(result.data.accommodation_deadline).toBeNull();
+    }
+  });
+
+  it("mostra erro legível para orçamento inválido", () => {
+    const result = tripSchema.safeParse({
+      title: "Visita com orçamento inválido",
+      traveler_person: "pedro",
+      host_person: "camilly",
+      direction: "Pedro visita Camilly",
+      origin_city: "João Pessoa",
+      destination_city: "Cuiabá",
+      start_date: "2026-07-01",
+      end_date: "2026-07-05",
+      status: "planejada",
+      planned_budget: "abc",
+      priority: "media"
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.message === "Informe um valor numérico válido.")).toBe(true);
+    }
+  });
+
   it("bloqueia data de volta antes da ida", () => {
     const result = tripSchema.safeParse({
       title: "Viagem",
