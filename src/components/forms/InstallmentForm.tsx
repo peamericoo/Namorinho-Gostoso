@@ -3,6 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import { z } from "zod";
 import { theme } from "../../constants/theme";
+import { todayISO } from "../../lib/dates";
 import { installmentSchema } from "../../lib/validators";
 import type { Installment, Trip } from "../../types/models";
 import { Button } from "../ui/Button";
@@ -26,7 +27,7 @@ export function InstallmentForm({ trips, initialValues, onSubmit, loading }: { t
       installment_count: initialValues?.installment_count ?? 1,
       installment_amount: initialValues?.installment_amount ?? 0,
       current_installment: initialValues?.current_installment ?? 1,
-      due_date: initialValues?.due_date ?? new Date().toISOString().slice(0, 10),
+      due_date: initialValues?.due_date ?? todayISO(),
       status: initialValues?.status ?? "pendente",
       payment_method: initialValues?.payment_method ?? "Cartão de crédito",
       notes: initialValues?.notes ?? ""

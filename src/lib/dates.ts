@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, isAfter, parseISO } from "date-fns";
+import { differenceInCalendarDays, format, isAfter, parseISO } from "date-fns";
 
 export function daysTogether(start?: string | null, end?: string | null) {
   if (!start || !end) return 0;
@@ -10,6 +10,6 @@ export function isDateAfter(a?: string | null, b?: string | null) {
   return isAfter(parseISO(a), parseISO(b));
 }
 
-export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+export function todayISO(date = new Date()) {
+  return format(date, "yyyy-MM-dd");
 }

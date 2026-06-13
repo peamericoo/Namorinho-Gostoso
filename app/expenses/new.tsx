@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ExpenseForm } from "../../src/components/forms/ExpenseForm";
 import { Card } from "../../src/components/ui/Card";
 import { Header } from "../../src/components/ui/Header";
@@ -7,6 +7,7 @@ import { useCategories, useExpenseMutations, useTrips } from "../../src/hooks/us
 import { useWorkspace } from "../../src/hooks/useWorkspace";
 
 export default function NewExpenseScreen() {
+  const { tripId } = useLocalSearchParams<{ tripId?: string }>();
   const workspace = useWorkspace();
   const trips = useTrips();
   const categories = useCategories();
@@ -20,6 +21,7 @@ export default function NewExpenseScreen() {
             coupleId={workspace.data.couple.id}
             trips={trips.data ?? []}
             categories={categories.data ?? []}
+            initialTripId={tripId}
             loading={mutations.create.isPending}
             onSubmit={async (values) => {
               return mutations.create.mutateAsync(values);

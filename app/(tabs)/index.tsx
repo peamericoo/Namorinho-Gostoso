@@ -16,12 +16,11 @@ import { Header } from "../../src/components/ui/Header";
 import { ProgressBar } from "../../src/components/ui/ProgressBar";
 import { Screen } from "../../src/components/ui/Screen";
 import { Skeleton } from "../../src/components/ui/Skeleton";
-import { labelPerson } from "../../src/constants/categories";
 import { theme } from "../../src/constants/theme";
 import { useDashboard } from "../../src/hooks/useDashboard";
 import { useWorkspace } from "../../src/hooks/useWorkspace";
 import { dateBR, money, percent } from "../../src/lib/formatters";
-import { daysUntilTrip, hasChecklistForTrip, hasPlannedCosts, tripBudgetProgress, tripChecklistProgress, tripDirectionChip } from "../../src/lib/productFlow";
+import { daysUntilTrip, hasChecklistForTrip, hasPlannedCosts, tripBudgetProgress, tripChecklistProgress, tripDirectionChip, tripTravelerLabel } from "../../src/lib/productFlow";
 
 export default function DashboardScreen() {
   const workspace = useWorkspace();
@@ -133,8 +132,15 @@ export default function DashboardScreen() {
 
           {data.upcomingTrip ? (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Próximo encontro</Text>
+              <Text style={styles.sectionTitle}>Encontro atual ou próximo</Text>
               <TripCard trip={data.upcomingTrip} expenses={data.expenses} plannedExpenses={data.plannedExpenses} onPress={() => router.push(`/trips/${data.upcomingTrip?.id}`)} />
+            </View>
+          ) : null}
+
+          {data.lastCompletedTrip ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Última viagem concluída</Text>
+              <TripCard trip={data.lastCompletedTrip} expenses={data.expenses} plannedExpenses={data.plannedExpenses} onPress={() => router.push(`/trips/${data.lastCompletedTrip?.id}`)} />
             </View>
           ) : null}
 
@@ -163,7 +169,7 @@ function StatusCard({ data, isWide }: { data: ReturnType<typeof useDashboard>["d
   const budget = trip ? tripBudgetProgress(trip, data.expenses, data.plannedExpenses) : 0;
   const checklist = trip ? tripChecklistProgress(trip, data.checklistItems) : 0;
   const savings = Math.min(data.savings.progress, 1);
-  const title = trip ? `${labelPerson(trip.traveler_person)} em ${trip.destination_city}` : "Próxima viagem ainda não definida";
+  const title = trip ? `${tripTravelerLabel(trip)} em ${trip.destination_city}` : "Próxima viagem ainda não definida";
   const subtitle = trip ? `${dateBR(trip.start_date)} · ${tripDirectionChip(trip)}` : "Comecem criando ou simulando o próximo encontro.";
 
   return (

@@ -1,6 +1,7 @@
 import { addDays, differenceInCalendarDays, isBefore, parseISO } from "date-fns";
 import type { ChecklistItem, Expense, Installment, PlannedExpense, SavingsGoal, Settlement, SettlementSummary, Trip } from "../types/models";
 import { daysTogether } from "./dates";
+import { getEffectiveTripStatus, showsTripPreparationStatus } from "./tripLifecycle";
 
 export type ExpenseResponsibility = {
   pedroResponsibility: number;
@@ -239,19 +240,22 @@ export function smartAlerts(params: {
   installments: Installment[];
   savingsGoals: SavingsGoal[];
   settlements?: Settlement[];
+  referenceDate?: Date | string;
 }) {
   const alerts: { tone: "warning" | "danger" | "success"; message: string }[] = [];
-  const now = new Date();
+  const now = typeof params.referenceDate === "string" ? parseISO(params.referenceDate) : params.referenceDate ?? new Date();
   const settlement = calculateSettlement(params.expenses, params.settlements ?? []);
 
   params.trips.forEach((trip) => {
     const summary = tripSummary(trip, params.expenses, params.plannedExpenses);
+    const effectiveStatus = getEffectiveTripStatus(trip, now);
+    const shouldCheckPreparation = showsTripPreparationStatus(effectiveStatus);
     const startsIn = differenceInCalendarDays(parseISO(trip.start_date), now);
     if (summary.usage > 1) alerts.push({ tone: "danger", message: `${trip.title} está acima do orçamento.` });
-    if (startsIn <= 20 && startsIn >= 0 && !trip.tickets_url) alerts.push({ tone: "warning", message: `${trip.title} está próxima e ainda não tem link de passagem.` });
-    if (startsIn <= 20 && startsIn >= 0 && !trip.accommodation_url) alerts.push({ tone: "warning", message: `${trip.title} está próxima e ainda não tem hospedagem.` });
+    if (shouldCheckPreparation && startsIn <= 20 && startsIn >= 0 && !trip.tickets_url) alerts.push({ tone: "warning", message: `${trip.title} está próxima e ainda não tem link de passagem.` });
+    if (shouldCheckPreparation && startsIn <= 20 && startsIn >= 0 && !trip.accommodation_url) alerts.push({ tone: "warning", message: `${trip.title} está próxima e ainda não tem hospedagem.` });
     const tripChecklist = params.checklistItems.filter((item) => item.trip_id === trip.id);
-    if (tripChecklist.some((item) => !item.is_done) && startsIn <= 15 && startsIn >= 0) alerts.push({ tone: "warning", message: `${trip.title} tem checklist pendente.` });
+    if (shouldCheckPreparation && tripChecklist.some((item) => !item.is_done) && startsIn <= 15 && startsIn >= 0) alerts.push({ tone: "warning", message: `${trip.title} tem checklist pendente.` });
   });
 
   params.installments.forEach((installment) => {

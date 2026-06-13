@@ -4,7 +4,9 @@ import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 import { theme } from "../../constants/theme";
-import { buildTripDirection } from "../../lib/productFlow";
+import { todayISO } from "../../lib/dates";
+import { buildTripDirection, companionOf } from "../../lib/productFlow";
+import { deriveTripStatusFromDates, isManualTripStatus } from "../../lib/tripLifecycle";
 import { tripSchema } from "../../lib/validators";
 import type { Trip } from "../../types/models";
 import { Button } from "../ui/Button";
@@ -12,68 +14,129 @@ import { DateInput } from "../ui/DateInput";
 import { Input } from "../ui/Input";
 import { MoneyInput } from "../ui/MoneyInput";
 import { Select } from "../ui/Select";
-import { personOptions, priorityOptions, statusOptions } from "./formOptions";
+import { personOptions, priorityOptions, statusOptions, tripKindOptions } from "./formOptions";
 
 type TripFormInput = z.input<typeof tripSchema>;
 type TripFormValues = z.output<typeof tripSchema>;
 
-const defaults: TripFormInput = {
-  title: "",
-  traveler_person: "pedro",
-  host_person: "camilly",
-  direction: "Pedro visita Camilly",
-  origin_city: "",
-  destination_city: "",
-  start_date: new Date().toISOString().slice(0, 10),
-  end_date: new Date().toISOString().slice(0, 10),
-  status: "planejada",
-  purpose: "",
-  planned_budget: 0,
-  priority: "media",
-  tickets_url: "",
-  accommodation_url: "",
-  itinerary_url: "",
-  ticket_deadline: "",
-  accommodation_deadline: "",
-  notes: ""
-};
+function defaultTripValues(): TripFormInput {
+  const today = todayISO();
+  return {
+    title: "",
+    trip_kind: "visit",
+    traveler_person: "pedro",
+    host_person: "camilly",
+    direction: "Pedro visita Camilly",
+    origin_city: "",
+    destination_city: "",
+    start_date: today,
+    end_date: today,
+    status: "em_andamento",
+    purpose: "",
+    planned_budget: 0,
+    priority: "media",
+    tickets_url: "",
+    accommodation_url: "",
+    itinerary_url: "",
+    ticket_deadline: "",
+    accommodation_deadline: "",
+    notes: ""
+  };
+}
 
 export function TripForm({ initialValues, onSubmit, loading }: { initialValues?: Partial<Trip>; onSubmit: (values: TripFormValues) => void; loading?: boolean }) {
   const form = useForm<TripFormInput, unknown, TripFormValues>({
     resolver: zodResolver(tripSchema),
-    defaultValues: { ...defaults, ...initialValues } as TripFormInput
+    defaultValues: { ...defaultTripValues(), ...initialValues } as TripFormInput
   });
   const errors = form.formState.errors;
+  const tripKind = form.watch("trip_kind");
   const traveler = form.watch("traveler_person");
   const host = form.watch("host_person");
+  const destinationCity = form.watch("destination_city");
+  const startDate = form.watch("start_date");
+  const endDate = form.watch("end_date");
+  const status = form.watch("status");
 
   useEffect(() => {
-    form.setValue("direction", buildTripDirection(traveler, host), { shouldDirty: true, shouldValidate: true });
+    if (traveler === host) {
+      form.setValue("host_person", companionOf(traveler), { shouldDirty: true, shouldValidate: true });
+    }
   }, [form, host, traveler]);
+
+  useEffect(() => {
+    form.setValue("direction", buildTripDirection(traveler, host, tripKind, destinationCity), { shouldDirty: true, shouldValidate: true });
+  }, [destinationCity, form, host, traveler, tripKind]);
+
+  useEffect(() => {
+    if (!startDate || !endDate || isManualTripStatus(status)) return;
+    const nextStatus = deriveTripStatusFromDates(startDate, endDate);
+    if (status !== nextStatus) {
+      form.setValue("status", nextStatus, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [endDate, form, startDate, status]);
 
   return (
     <View style={styles.form}>
-      <FormStep number={1} title="Direção e cidades" description="Defina quem vai viajar e onde vocês vão se encontrar." />
+      <FormStep number={1} title="Tipo, direção e cidades" description="Escolha entre visita de um para o outro ou uma viagem dos dois para outro destino." />
       <Controller control={form.control} name="title" render={({ field }) => <Input label="Nome do encontro" value={field.value} onChangeText={field.onChange} error={errors.title?.message} />} />
+      <Controller control={form.control} name="trip_kind" render={({ field }) => <Select label="Tipo de viagem" value={field.value} onChange={field.onChange} options={tripKindOptions} error={errors.trip_kind?.message} />} />
       <View style={styles.grid}>
-        <Controller control={form.control} name="traveler_person" render={({ field }) => <Select label="Quem vai viajar?" value={field.value} onChange={field.onChange} options={personOptions} error={errors.traveler_person?.message} />} />
-        <Controller control={form.control} name="host_person" render={({ field }) => <Select label="Quem vai receber?" value={field.value} onChange={field.onChange} options={personOptions} error={errors.host_person?.message} />} />
+        <Controller
+          control={form.control}
+          name="traveler_person"
+          render={({ field }) => (
+            <Select
+              label={tripKind === "shared_destination" ? "Responsável principal" : "Quem vai viajar?"}
+              value={field.value}
+              onChange={field.onChange}
+              options={personOptions}
+              error={errors.traveler_person?.message}
+            />
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="host_person"
+          render={({ field }) => (
+            <Select
+              label={tripKind === "shared_destination" ? "Outra pessoa" : "Quem vai receber?"}
+              value={field.value}
+              onChange={field.onChange}
+              options={personOptions}
+              error={errors.host_person?.message}
+            />
+          )}
+        />
       </View>
-      <Controller control={form.control} name="direction" render={({ field }) => <Input label="Direção do encontro" value={field.value} onChangeText={field.onChange} error={errors.direction?.message} />} />
+      <Controller control={form.control} name="direction" render={({ field }) => <Input label="Resumo da viagem" value={field.value} onChangeText={field.onChange} error={errors.direction?.message} />} />
       <View style={styles.grid}>
-        <Controller control={form.control} name="origin_city" render={({ field }) => <Input label="Cidade de partida" value={field.value} onChangeText={field.onChange} error={errors.origin_city?.message} />} />
-        <Controller control={form.control} name="destination_city" render={({ field }) => <Input label="Cidade do encontro" value={field.value} onChangeText={field.onChange} error={errors.destination_city?.message} />} />
+        <Controller control={form.control} name="origin_city" render={({ field }) => <Input label={tripKind === "shared_destination" ? "Cidade/base de partida" : "Cidade de partida"} value={field.value} onChangeText={field.onChange} error={errors.origin_city?.message} />} />
+        <Controller control={form.control} name="destination_city" render={({ field }) => <Input label={tripKind === "shared_destination" ? "Destino da viagem" : "Cidade do encontro"} value={field.value} onChangeText={field.onChange} error={errors.destination_city?.message} />} />
       </View>
 
-      <FormStep number={2} title="Datas" description="Escolha o período para o painel calcular urgência e próximos passos." />
+      <FormStep number={2} title="Datas" description="Use datas passadas para lançar uma viagem já realizada; o status será ajustado automaticamente." />
       <View style={styles.grid}>
         <Controller control={form.control} name="start_date" render={({ field }) => <DateInput label="Ida" value={field.value} onChangeText={field.onChange} error={errors.start_date?.message} />} />
         <Controller control={form.control} name="end_date" render={({ field }) => <DateInput label="Volta" value={field.value} onChangeText={field.onChange} error={errors.end_date?.message} />} />
       </View>
 
-      <FormStep number={3} title="Orçamento inicial" description="Esse encontro tem orçamento estimado? Pode ser refinado depois nos custos planejados." />
+      <FormStep number={3} title="Orçamento e status" description="Viagens futuras ficam planejadas, viagens em curso ficam em andamento e passadas ficam concluídas." />
       <View style={styles.grid}>
-        <Controller control={form.control} name="status" render={({ field }) => <Select label="Status" value={field.value} onChange={field.onChange} options={statusOptions} error={errors.status?.message} />} />
+        <Controller
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <Select
+              label="Status"
+              value={field.value}
+              onChange={field.onChange}
+              options={statusOptions}
+              error={errors.status?.message}
+              helperText="As datas atualizam o status; Cancelada e Adiada ficam como exceções manuais."
+            />
+          )}
+        />
         <Controller control={form.control} name="priority" render={({ field }) => <Select label="Prioridade" value={field.value} onChange={field.onChange} options={priorityOptions} error={errors.priority?.message} />} />
       </View>
       <Controller control={form.control} name="planned_budget" render={({ field }) => <MoneyInput label="Orçamento estimado" value={String(field.value ?? "")} onChangeText={field.onChange} error={errors.planned_budget?.message} />} />

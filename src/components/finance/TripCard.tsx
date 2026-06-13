@@ -1,9 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
-import { labelPerson, labelStatus } from "../../constants/categories";
+import { labelStatus } from "../../constants/categories";
 import { theme } from "../../constants/theme";
 import { actualByTrip, plannedByTrip } from "../../lib/calculations";
 import { dateBR, money } from "../../lib/formatters";
-import { tripDirectionChip } from "../../lib/productFlow";
+import { isSharedTrip, tripDirectionChip, tripTravelerLabel } from "../../lib/productFlow";
+import { getEffectiveTripStatus } from "../../lib/tripLifecycle";
 import type { Expense, PlannedExpense, Trip } from "../../types/models";
 import { AvatarChip } from "../ui/AvatarChip";
 import { Badge } from "../ui/Badge";
@@ -14,6 +15,8 @@ export function TripCard({ trip, expenses, plannedExpenses, onPress }: { trip: T
   const actual = actualByTrip(trip.id, expenses);
   const planned = trip.planned_budget || plannedByTrip(trip.id, plannedExpenses);
   const overBudget = planned > 0 && actual > planned;
+  const effectiveStatus = getEffectiveTripStatus(trip);
+  const sharedTrip = isSharedTrip(trip);
   return (
     <Card onPress={onPress} accessibilityLabel={`Abrir viagem ${trip.title}`}>
       <View style={styles.top}>
@@ -21,15 +24,15 @@ export function TripCard({ trip, expenses, plannedExpenses, onPress }: { trip: T
           <Text style={styles.title}>{trip.title}</Text>
           <Text style={styles.subtitle}>{trip.origin_city} → {trip.destination_city}</Text>
         </View>
-        <Badge label={labelStatus(trip.status)} tone={trip.status === "concluida" ? "success" : overBudget ? "danger" : "neutral"} />
+        <Badge label={labelStatus(effectiveStatus)} tone={effectiveStatus === "concluida" ? "success" : overBudget ? "danger" : "neutral"} />
       </View>
       <View style={styles.row}>
-        <AvatarChip person={trip.traveler_person} />
-        <Badge label={tripDirectionChip(trip)} tone={trip.traveler_person === "pedro" ? "pedro" : "camilly"} />
+        <AvatarChip person={sharedTrip ? "ambos" : trip.traveler_person} />
+        <Badge label={tripDirectionChip(trip)} tone={sharedTrip ? "couple" : trip.traveler_person === "pedro" ? "pedro" : "camilly"} />
         <Text style={styles.date}>{dateBR(trip.start_date)} - {dateBR(trip.end_date)}</Text>
       </View>
       <BudgetProgress planned={planned} actual={actual} />
-      <Text style={styles.footer}>Quem viaja: {labelPerson(trip.traveler_person)} · Planejado {money(planned)}</Text>
+      <Text style={styles.footer}>Quem viaja: {tripTravelerLabel(trip)} · Planejado {money(planned)}</Text>
     </Card>
   );
 }

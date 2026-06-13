@@ -9,6 +9,7 @@ import { PersonBalanceCard } from "../src/components/finance/PersonBalanceCard";
 import { theme } from "../src/constants/theme";
 import { useExpenses, useSettlementMutations, useSettlements } from "../src/hooks/useFinanceData";
 import { calculateSettlement } from "../src/lib/calculations";
+import { todayISO } from "../src/lib/dates";
 import { dateBR, money, personName } from "../src/lib/formatters";
 
 export default function SettlementsScreen() {
@@ -31,7 +32,7 @@ export default function SettlementsScreen() {
       receiver_person: result.receiver,
       amount: result.amount,
       status: "concluido",
-      settled_at: new Date().toISOString().slice(0, 10),
+      settled_at: todayISO(),
       payment_method: "Pix",
       notes: result.message
     });

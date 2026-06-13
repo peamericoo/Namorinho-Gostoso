@@ -12,9 +12,11 @@ import { Skeleton } from "../../src/components/ui/Skeleton";
 import { labelStatus } from "../../src/constants/categories";
 import { theme } from "../../src/constants/theme";
 import { useExpenses, usePlannedExpenses, useTrips } from "../../src/hooks/useFinanceData";
+import { isSharedTrip } from "../../src/lib/productFlow";
+import { getEffectiveTripStatus } from "../../src/lib/tripLifecycle";
 import { useFiltersStore } from "../../src/store/filters.store";
 
-type DirectionFilter = "todos" | "pedro_to_camilly" | "camilly_to_pedro";
+type DirectionFilter = "todos" | "pedro_to_camilly" | "camilly_to_pedro" | "shared_destination";
 
 export default function TripsScreen() {
   const trips = useTrips();
@@ -25,8 +27,14 @@ export default function TripsScreen() {
   const filtered = useMemo(() => {
     const search = filters.tripSearch.toLowerCase();
     return (trips.data ?? []).filter((trip) => {
-      const statusOk = filters.statusFilter === "todos" || trip.status === filters.statusFilter;
-      const directionOk = directionFilter === "todos" || (directionFilter === "pedro_to_camilly" ? trip.traveler_person === "pedro" : trip.traveler_person === "camilly");
+      const effectiveStatus = getEffectiveTripStatus(trip);
+      const statusOk = filters.statusFilter === "todos" || effectiveStatus === filters.statusFilter;
+      const sharedTrip = isSharedTrip(trip);
+      const directionOk =
+        directionFilter === "todos" ||
+        (directionFilter === "shared_destination" && sharedTrip) ||
+        (directionFilter === "pedro_to_camilly" && !sharedTrip && trip.traveler_person === "pedro") ||
+        (directionFilter === "camilly_to_pedro" && !sharedTrip && trip.traveler_person === "camilly");
       const searchOk = !search || `${trip.title} ${trip.origin_city} ${trip.destination_city}`.toLowerCase().includes(search);
       return statusOk && directionOk && searchOk;
     });
@@ -34,7 +42,7 @@ export default function TripsScreen() {
 
   return (
     <Screen>
-      <Header title="Linha do tempo do casal" subtitle="Planeje próximos encontros em qualquer direção." right={<Button title="Adicionar" onPress={() => router.push("/trips/new")} />} />
+      <Header title="Linha do tempo do casal" subtitle="Planeje próximos encontros e registre viagens já realizadas." right={<Button title="Adicionar" onPress={() => router.push("/trips/new")} />} />
       <View style={styles.filters}>
         <Input label="Buscar" value={filters.tripSearch} onChangeText={filters.setTripSearch} placeholder="Nome, cidade ou destino" />
         <Select
@@ -53,7 +61,8 @@ export default function TripsScreen() {
           options={[
             { label: "Todos", value: "todos" },
             { label: "Pedro → Camilly", value: "pedro_to_camilly" },
-            { label: "Camilly → Pedro", value: "camilly_to_pedro" }
+            { label: "Camilly → Pedro", value: "camilly_to_pedro" },
+            { label: "Pedro e Camilly", value: "shared_destination" }
           ]}
         />
       </View>

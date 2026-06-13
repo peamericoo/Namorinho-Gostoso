@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { calculateSettlement, plannedByTrip, savingsOverview, smartAlerts, sum, tripSummary } from "../lib/calculations";
+import { getCurrentOrNextTrip, getLastCompletedTrip } from "../lib/tripLifecycle";
 import { useChecklistItems, useExpenses, useInstallments, usePlannedExpenses, useSavingsGoals, useTrips, useCategories, useSettlements } from "./useFinanceData";
 
 export function useDashboard() {
@@ -22,10 +23,12 @@ export function useDashboard() {
     const installmentRows = installments.data ?? [];
     const categoryRows = categories.data ?? [];
     const settlementRows = settlements.data ?? [];
+    const now = new Date();
     const settlement = calculateSettlement(expenseRows, settlementRows);
     const totalPlanned = sum(tripRows.map((trip) => trip.planned_budget || plannedByTrip(trip.id, plannedRows)));
     const totalSpent = sum(expenseRows.map((expense) => expense.amount));
-    const upcomingTrip = tripRows.find((trip) => trip.status !== "concluida" && new Date(trip.start_date) >= new Date()) ?? tripRows[0];
+    const upcomingTrip = getCurrentOrNextTrip(tripRows, now);
+    const lastCompletedTrip = getLastCompletedTrip(tripRows, now);
 
     return {
       trips: tripRows,
@@ -42,6 +45,7 @@ export function useDashboard() {
       settlement,
       savings: savingsOverview(savingsRows),
       upcomingTrip,
+      lastCompletedTrip,
       tripSummaries: tripRows.map((trip) => ({ trip, ...tripSummary(trip, expenseRows, plannedRows) })),
       alerts: smartAlerts({
         trips: tripRows,
@@ -50,7 +54,8 @@ export function useDashboard() {
         checklistItems: checklistRows,
         installments: installmentRows,
         savingsGoals: savingsRows,
-        settlements: settlementRows
+        settlements: settlementRows,
+        referenceDate: now
       })
     };
   }, [categories.data, checklistItems.data, expenses.data, installments.data, plannedExpenses.data, savingsGoals.data, settlements.data, trips.data]);

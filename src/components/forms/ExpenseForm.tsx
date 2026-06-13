@@ -1,10 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as DocumentPicker from "expo-document-picker";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import { z } from "zod";
 import { theme } from "../../constants/theme";
+import { todayISO } from "../../lib/dates";
+import { getCurrentOrNextTrip, getLastCompletedTrip } from "../../lib/tripLifecycle";
 import { expenseSchema } from "../../lib/validators";
 import { updateExpense, uploadReceipt } from "../../services/finance.service";
 import type { Category, Expense, Trip } from "../../types/models";
@@ -22,6 +24,7 @@ export function ExpenseForm({
   coupleId,
   trips,
   categories,
+  initialTripId,
   initialValues,
   onSubmit,
   afterSubmit,
@@ -30,20 +33,27 @@ export function ExpenseForm({
   coupleId: string;
   trips: Trip[];
   categories: Category[];
+  initialTripId?: string;
   initialValues?: Partial<Expense>;
   onSubmit: (values: ExpenseFormValues) => Promise<Expense>;
   afterSubmit?: () => void;
   loading?: boolean;
 }) {
   const [pendingReceipt, setPendingReceipt] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+  const defaultTripId = useMemo(() => {
+    if (initialValues?.trip_id) return initialValues.trip_id;
+    if (initialTripId) return initialTripId;
+    return getCurrentOrNextTrip(trips)?.id ?? getLastCompletedTrip(trips)?.id ?? trips[0]?.id ?? "";
+  }, [initialTripId, initialValues?.trip_id, trips]);
+  const defaultCategoryId = initialValues?.category_id ?? categories[0]?.id ?? "";
   const form = useForm<ExpenseFormInput, unknown, ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      trip_id: initialValues?.trip_id ?? trips[0]?.id ?? "",
-      spent_at: initialValues?.spent_at ?? new Date().toISOString().slice(0, 10),
+      trip_id: defaultTripId,
+      spent_at: initialValues?.spent_at ?? todayISO(),
       paid_by_person: initialValues?.paid_by_person ?? "pedro",
       beneficiary_person: initialValues?.beneficiary_person ?? "ambos",
-      category_id: initialValues?.category_id ?? categories[0]?.id ?? "",
+      category_id: defaultCategoryId,
       subcategory_id: initialValues?.subcategory_id ?? "",
       cost_type: initialValues?.cost_type ?? "variavel",
       description: initialValues?.description ?? "",
@@ -63,6 +73,18 @@ export function ExpenseForm({
     } as ExpenseFormInput
   });
   const errors = form.formState.errors;
+
+  useEffect(() => {
+    if (!form.getValues("trip_id") && defaultTripId) {
+      form.setValue("trip_id", defaultTripId, { shouldValidate: true });
+    }
+  }, [defaultTripId, form]);
+
+  useEffect(() => {
+    if (!form.getValues("category_id") && defaultCategoryId) {
+      form.setValue("category_id", defaultCategoryId, { shouldValidate: true });
+    }
+  }, [defaultCategoryId, form]);
 
   async function attachReceipt() {
     const result = await DocumentPicker.getDocumentAsync({ type: ["image/*", "application/pdf"], copyToCacheDirectory: true });

@@ -1,4 +1,6 @@
-import { costTypes, labelPerson, labelStatus, paymentMethods, priorities, tripStatuses } from "../../constants/categories";
+import { costTypes, labelPerson, labelStatus, labelTripKind, paymentMethods, priorities, tripKinds, tripStatuses } from "../../constants/categories";
+import { dateBR } from "../../lib/formatters";
+import { getEffectiveTripStatus } from "../../lib/tripLifecycle";
 import type { Category, PersonKey, Trip } from "../../types/models";
 
 export const personOptions = [
@@ -13,6 +15,7 @@ export const personWithBothOptions = [
 
 export const priorityOptions = priorities.map((value) => ({ value, label: labelStatus(value) }));
 export const statusOptions = tripStatuses.map((value) => ({ value, label: labelStatus(value) }));
+export const tripKindOptions = tripKinds.map((value) => ({ value, label: labelTripKind(value) }));
 export const costTypeOptions = costTypes.map((value) => ({ value, label: labelStatus(value) }));
 export const paymentOptions = paymentMethods.map((value) => ({ value, label: value }));
 export const yesNoOptions = [
@@ -21,7 +24,10 @@ export const yesNoOptions = [
 ];
 
 export function tripOptions(trips: Trip[]) {
-  return trips.map((trip) => ({ label: trip.title, value: trip.id }));
+  return trips.map((trip) => ({
+    label: `${trip.title} · ${dateBR(trip.start_date)} · ${labelStatus(getEffectiveTripStatus(trip))}`,
+    value: trip.id
+  }));
 }
 
 export function categoryOptions(categories: Category[]) {

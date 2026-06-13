@@ -3,6 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import { z } from "zod";
 import { theme } from "../../constants/theme";
+import { todayISO } from "../../lib/dates";
 import { plannedExpenseSchema } from "../../lib/validators";
 import type { Category, PlannedExpense, Trip } from "../../types/models";
 import { Button } from "../ui/Button";
@@ -21,7 +22,7 @@ export function PlannedExpenseForm({ trips, categories, initialValues, onSubmit,
     defaultValues: {
       trip_id: initialValues?.trip_id ?? trips[0]?.id ?? "",
       owner_person: initialValues?.owner_person ?? "pedro",
-      expected_date: initialValues?.expected_date ?? new Date().toISOString().slice(0, 10),
+      expected_date: initialValues?.expected_date ?? todayISO(),
       category_id: initialValues?.category_id ?? categories[0]?.id ?? "",
       subcategory_id: initialValues?.subcategory_id ?? "",
       cost_type: initialValues?.cost_type ?? "variavel",

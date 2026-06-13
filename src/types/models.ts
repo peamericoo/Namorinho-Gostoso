@@ -1,5 +1,6 @@
 export type PersonKey = "pedro" | "camilly" | "ambos";
 export type TripStatus = "planejada" | "em_andamento" | "concluida" | "cancelada" | "adiada";
+export type TripKind = "visit" | "shared_destination";
 export type Priority = "alta" | "media" | "baixa";
 export type CostType = "fixo" | "variavel" | "emergencial" | "opcional";
 
@@ -32,6 +33,7 @@ export type Trip = {
   title: string;
   traveler_person: Exclude<PersonKey, "ambos">;
   host_person: Exclude<PersonKey, "ambos">;
+  trip_kind: TripKind;
   direction: string;
   origin_city: string;
   destination_city: string;

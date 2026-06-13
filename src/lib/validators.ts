@@ -5,6 +5,7 @@ const nonNegative = "O valor não pode ser negativo.";
 
 export const personSchema = z.enum(["pedro", "camilly"], { error: required });
 export const personOrBothSchema = z.enum(["pedro", "camilly", "ambos"], { error: required });
+export const tripKindSchema = z.enum(["visit", "shared_destination"], { error: required });
 export const tripStatusSchema = z.enum(["planejada", "em_andamento", "concluida", "cancelada", "adiada"], { error: required });
 export const prioritySchema = z.enum(["alta", "media", "baixa"], { error: required });
 export const costTypeSchema = z.enum(["fixo", "variavel", "emergencial", "opcional"], { error: required });
@@ -15,6 +16,7 @@ export const installmentStatusSchema = z.enum(["pendente", "pago", "concluido", 
 export const tripSchema = z
   .object({
     title: z.string().min(2, "Informe o nome da viagem."),
+    trip_kind: tripKindSchema.default("visit"),
     traveler_person: personSchema,
     host_person: personSchema,
     direction: z.string().min(2, required),
@@ -32,6 +34,10 @@ export const tripSchema = z
     ticket_deadline: z.string().optional().nullable(),
     accommodation_deadline: z.string().optional().nullable(),
     notes: z.string().optional().nullable()
+  })
+  .refine((data) => data.traveler_person !== data.host_person, {
+    path: ["host_person"],
+    message: "Escolha a outra pessoa."
   })
   .refine((data) => !data.start_date || !data.end_date || data.end_date >= data.start_date, {
     path: ["end_date"],
@@ -120,6 +126,7 @@ export const plannedExpenseSchema = z
 
 export const simulatorSchema = z
   .object({
+    trip_kind: tripKindSchema,
     traveler_person: personSchema,
     origin_city: z.string().min(2, required),
     destination_city: z.string().min(2, required),

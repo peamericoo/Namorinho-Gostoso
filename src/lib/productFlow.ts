@@ -3,12 +3,28 @@ import { labelPerson } from "../constants/categories";
 import { actualByTrip, plannedByTrip } from "./calculations";
 import type { ChecklistItem, Expense, PlannedExpense, Trip } from "../types/models";
 
-export function buildTripDirection(traveler?: string | null, host?: string | null) {
+export function companionOf(person?: string | null) {
+  return person === "camilly" ? "pedro" : "camilly";
+}
+
+export function isSharedTrip(trip?: Pick<Trip, "trip_kind"> | null) {
+  return trip?.trip_kind === "shared_destination";
+}
+
+export function buildTripDirection(traveler?: string | null, host?: string | null, tripKind: Trip["trip_kind"] = "visit", destinationCity?: string | null) {
+  if (tripKind === "shared_destination") {
+    return destinationCity ? `Pedro e Camilly viajam para ${destinationCity}` : "Pedro e Camilly viajam juntos";
+  }
   return `${labelPerson(traveler)} visita ${labelPerson(host)}`;
 }
 
-export function tripDirectionChip(trip: Pick<Trip, "traveler_person" | "host_person">) {
+export function tripDirectionChip(trip: Pick<Trip, "traveler_person" | "host_person" | "trip_kind" | "destination_city">) {
+  if (isSharedTrip(trip)) return `Ambos → ${trip.destination_city}`;
   return `${labelPerson(trip.traveler_person)} → ${labelPerson(trip.host_person)}`;
+}
+
+export function tripTravelerLabel(trip: Pick<Trip, "traveler_person" | "trip_kind">) {
+  return isSharedTrip(trip) ? "Pedro e Camilly" : labelPerson(trip.traveler_person);
 }
 
 export function daysUntilTrip(trip?: Pick<Trip, "start_date"> | null) {

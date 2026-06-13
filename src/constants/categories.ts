@@ -6,6 +6,7 @@ export const personLabels = {
 
 export const paymentMethods = ["Pix", "Dinheiro", "Cartão de crédito", "Cartão de débito", "Transferência", "Boleto"];
 export const costTypes = ["fixo", "variavel", "emergencial", "opcional"] as const;
+export const tripKinds = ["visit", "shared_destination"] as const;
 export const tripStatuses = ["planejada", "em_andamento", "concluida", "cancelada", "adiada"] as const;
 export const priorities = ["alta", "media", "baixa"] as const;
 
@@ -49,4 +50,9 @@ export function labelStatus(value?: string | null) {
     comprado: "Comprado"
   };
   return value ? map[value] ?? value : "Sem status";
+}
+
+export function labelTripKind(value?: string | null) {
+  if (value === "shared_destination") return "Viagem dos dois";
+  return "Visita entre vocês";
 }

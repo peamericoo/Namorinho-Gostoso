@@ -9,10 +9,12 @@ import { AppModal } from "../../../src/components/ui/Modal";
 import { ProgressBar } from "../../../src/components/ui/ProgressBar";
 import { Screen } from "../../../src/components/ui/Screen";
 import { SettlementCard } from "../../../src/components/finance/SettlementCard";
+import { labelStatus } from "../../../src/constants/categories";
 import { theme } from "../../../src/constants/theme";
 import { actualByTrip, plannedByTrip, tripSummary } from "../../../src/lib/calculations";
 import { daysTogether } from "../../../src/lib/dates";
 import { dateBR, money } from "../../../src/lib/formatters";
+import { getEffectiveTripStatus, showsTripPreparationStatus } from "../../../src/lib/tripLifecycle";
 import { useChecklistItems, useExpenses, useItineraryItems, usePlannedExpenses, useTrip, useTripMutations } from "../../../src/hooks/useFinanceData";
 import { useState } from "react";
 
@@ -41,6 +43,8 @@ export default function TripDetailScreen() {
   const tripItinerary = (itinerary.data ?? []).filter((item) => item.trip_id === trip.data.id);
   const summary = tripSummary(trip.data, expenses.data ?? [], planned.data ?? []);
   const checklistProgress = tripChecklist.length ? tripChecklist.filter((item) => item.is_done).length / tripChecklist.length : 0;
+  const effectiveStatus = getEffectiveTripStatus(trip.data);
+  const showPreparationAlerts = showsTripPreparationStatus(effectiveStatus);
 
   async function removeTrip() {
     setDeleteError("");
@@ -58,7 +62,7 @@ export default function TripDetailScreen() {
       <Header title={trip.data.title} subtitle={`${trip.data.origin_city} → ${trip.data.destination_city}`} back onBack={() => router.replace("/(tabs)/trips")} />
       <Card>
         <View style={styles.row}>
-          <Badge label={trip.data.status} tone={trip.data.status === "concluida" ? "success" : "neutral"} />
+          <Badge label={labelStatus(effectiveStatus)} tone={effectiveStatus === "concluida" ? "success" : "neutral"} />
           <Badge label={`Prioridade ${trip.data.priority}`} tone={trip.data.priority === "alta" ? "warning" : "neutral"} />
         </View>
         <Text style={styles.title}>{dateBR(trip.data.start_date)} - {dateBR(trip.data.end_date)}</Text>
@@ -75,8 +79,8 @@ export default function TripDetailScreen() {
       </Card>
 
       {summary.usage > 1 ? <AlertBanner tone="danger" message="Esta viagem está acima do orçamento planejado." /> : null}
-      {!trip.data.tickets_url ? <AlertBanner message="Passagem ainda não cadastrada." /> : null}
-      {!trip.data.accommodation_url ? <AlertBanner message="Hospedagem ainda não cadastrada." /> : null}
+      {showPreparationAlerts && !trip.data.tickets_url ? <AlertBanner message="Passagem ainda não cadastrada." /> : null}
+      {showPreparationAlerts && !trip.data.accommodation_url ? <AlertBanner message="Hospedagem ainda não cadastrada." /> : null}
 
       <SettlementCard expenses={tripExpenses} />
 
@@ -91,6 +95,7 @@ export default function TripDetailScreen() {
         <Text style={styles.title}>Roteiro e gastos</Text>
         <Text style={styles.meta}>{tripPlanned.length} custos planejados · {tripExpenses.length} gastos reais · {tripItinerary.length} atividades</Text>
         <View style={styles.row}>
+          <Button title="Registrar gasto" onPress={() => router.push(`/expenses/new?tripId=${trip.data?.id}`)} />
           <Button title="Custos planejados" variant="secondary" onPress={() => router.push("/planned-expenses")} />
           <Button title="Roteiro" variant="secondary" onPress={() => router.push("/itinerary")} />
         </View>

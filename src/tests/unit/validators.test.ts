@@ -37,6 +37,41 @@ describe("validadores", () => {
     expect(result.success).toBe(true);
   });
 
+  it("aceita viagem passada concluída", () => {
+    const result = tripSchema.safeParse({
+      title: "Primeira visita antiga",
+      traveler_person: "pedro",
+      host_person: "camilly",
+      direction: "Pedro visita Camilly",
+      origin_city: "João Pessoa",
+      destination_city: "Cuiabá",
+      start_date: "2025-02-10",
+      end_date: "2025-02-15",
+      status: "concluida",
+      planned_budget: 0,
+      priority: "media"
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("aceita viagem dos dois para outro destino", () => {
+    const result = tripSchema.safeParse({
+      title: "Rio juntos",
+      trip_kind: "shared_destination",
+      traveler_person: "pedro",
+      host_person: "camilly",
+      direction: "Pedro e Camilly viajam para Rio de Janeiro",
+      origin_city: "Casa",
+      destination_city: "Rio de Janeiro",
+      start_date: "2026-09-10",
+      end_date: "2026-09-16",
+      status: "planejada",
+      planned_budget: 2500,
+      priority: "alta"
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("bloqueia data de volta antes da ida", () => {
     const result = tripSchema.safeParse({
       title: "Viagem",
@@ -113,6 +148,7 @@ describe("validadores", () => {
 
   it("aceita simulador válido", () => {
     const result = simulatorSchema.safeParse({
+      trip_kind: "shared_destination",
       traveler_person: "pedro",
       origin_city: "João Pessoa",
       destination_city: "Cuiabá",
@@ -135,5 +171,32 @@ describe("validadores", () => {
       currentSavings: 500
     });
     expect(result.success).toBe(true);
+  });
+
+  it("bloqueia simulador sem tipo de viagem", () => {
+    const result = simulatorSchema.safeParse({
+      trip_kind: "",
+      traveler_person: "pedro",
+      origin_city: "João Pessoa",
+      destination_city: "Rio de Janeiro",
+      startDate: "2026-07-01",
+      endDate: "2026-07-05",
+      lodgingType: "Hotel",
+      ticketAmount: 1000,
+      lodgingPerNight: 200,
+      foodPerDay: 80,
+      localTransportPerDay: 40,
+      leisurePerDay: 60,
+      giftsAmount: 100,
+      beautyAmount: 0,
+      groceriesAmount: 150,
+      emergencyAmount: 200,
+      safetyMarginPercent: 10,
+      pedroPercent: 50,
+      camillyPercent: 50,
+      monthsUntilTrip: 4,
+      currentSavings: 500
+    });
+    expect(result.success).toBe(false);
   });
 });

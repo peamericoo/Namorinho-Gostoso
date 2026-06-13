@@ -54,6 +54,7 @@ create table public.trips (
   title text not null,
   traveler_person text not null check (traveler_person in ('pedro', 'camilly')),
   host_person text not null check (host_person in ('pedro', 'camilly')),
+  trip_kind text not null default 'visit' check (trip_kind in ('visit', 'shared_destination')),
   direction text not null,
   origin_city text not null,
   destination_city text not null,

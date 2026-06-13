@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import type { Database } from "../types/database.types";
+import { normalizeTripForWrite } from "../lib/tripLifecycle";
 import type {
   Category,
   ChecklistItem,
@@ -112,13 +113,13 @@ export async function getTrip(id: string) {
 }
 
 export async function createTrip(coupleId: string, values: Partial<Trip>) {
-  const { data, error } = await supabase.from("trips").insert({ ...values, couple_id: coupleId }).select("*").single();
+  const { data, error } = await supabase.from("trips").insert({ ...normalizeTripForWrite(values), couple_id: coupleId }).select("*").single();
   raise(error, "Não foi possível criar a viagem.");
   return data as Trip;
 }
 
 export async function updateTrip(id: string, values: Partial<Trip>) {
-  const { data, error } = await supabase.from("trips").update(values).eq("id", id).select("*").single();
+  const { data, error } = await supabase.from("trips").update(normalizeTripForWrite(values)).eq("id", id).select("*").single();
   raise(error, "Não foi possível atualizar a viagem.");
   return data as Trip;
 }

@@ -4,6 +4,7 @@ import {
   calculateSimulation,
   installmentStatus,
   savingsOverview,
+  smartAlerts,
   tripSummary
 } from "../../lib/calculations";
 import type { Expense, Installment, PlannedExpense, SavingsGoal, Settlement, Trip } from "../../types/models";
@@ -12,6 +13,7 @@ const trip: Trip = {
   id: "trip-1",
   couple_id: "couple-1",
   title: "Teste",
+  trip_kind: "visit",
   traveler_person: "pedro",
   host_person: "camilly",
   direction: "Pedro visita Camilly",
@@ -190,5 +192,42 @@ describe("cálculos financeiros", () => {
       status: "pendente"
     };
     expect(installmentStatus(installment, new Date("2026-01-10")).overdue).toBe(true);
+  });
+
+  it("não cobra preparação de viagem cancelada mesmo com data futura", () => {
+    const alerts = smartAlerts({
+      trips: [
+        {
+          ...trip,
+          id: "trip-cancelada",
+          start_date: "2026-06-20",
+          end_date: "2026-06-25",
+          status: "cancelada",
+          tickets_url: null,
+          accommodation_url: null
+        }
+      ],
+      expenses: [],
+      plannedExpenses: [],
+      checklistItems: [
+        {
+          id: "check-1",
+          couple_id: "couple-1",
+          trip_id: "trip-cancelada",
+          title: "Comprar passagem",
+          category: "Transporte",
+          responsible_person: "pedro",
+          status: "pendente",
+          priority: "alta",
+          is_done: false
+        }
+      ],
+      installments: [],
+      savingsGoals: [],
+      settlements: [],
+      referenceDate: "2026-06-13"
+    });
+
+    expect(alerts.some((alert) => alert.message.includes("passagem") || alert.message.includes("hospedagem") || alert.message.includes("checklist"))).toBe(false);
   });
 });
