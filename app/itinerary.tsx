@@ -44,7 +44,7 @@ export default function ItineraryScreen() {
         </Card>
       ))}
       <AppModal visible={open} title={editing ? "Editar atividade" : "Nova atividade"} onClose={() => { setOpen(false); setEditing(null); }}>
-        <ItineraryItemForm trips={trips.data ?? []} initialValues={editing ?? undefined} onSubmit={(values) => void save(values)} loading={mutations.save.isPending} />
+        <ItineraryItemForm trips={trips.data ?? []} initialValues={editing ?? undefined} onSubmit={save} loading={mutations.save.isPending} />
       </AppModal>
     </Screen>
   );

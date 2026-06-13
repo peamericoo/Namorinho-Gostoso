@@ -95,7 +95,7 @@ export const expenseSchema = z
     paid_by_person: personSchema,
     beneficiary_person: personOrBothSchema,
     category_id: z.string().min(1, "Escolha a categoria."),
-    subcategory_id: z.string().optional().nullable(),
+    subcategory_id: optionalText,
     cost_type: costTypeSchema,
     description: z.string().min(2, "Descreva o gasto."),
     amount: positiveNumber,
@@ -262,5 +262,5 @@ export const categorySchema = z.object({
   name: z.string().min(2, "Informe o nome."),
   icon: z.string().min(1, required),
   color: z.string().min(4, required),
-  subcategory: z.string().optional().nullable()
+  subcategory: optionalText
 });

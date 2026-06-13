@@ -40,6 +40,7 @@ export function Select({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityHint={required ? "Campo obrigatório" : undefined}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen(true)}
         style={({ pressed }) => [styles.trigger, pressed && styles.pressed, open && styles.focused, error && styles.errorInput]}

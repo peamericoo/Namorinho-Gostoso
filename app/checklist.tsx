@@ -49,7 +49,7 @@ export default function ChecklistScreen() {
         </Card>
       ))}
       <AppModal visible={open} title={editing ? "Editar item" : "Novo item"} onClose={() => { setOpen(false); setEditing(null); }}>
-        <ChecklistItemForm trips={trips.data ?? []} initialValues={editing ?? undefined} onSubmit={(values) => void save(values)} loading={mutations.save.isPending} />
+        <ChecklistItemForm trips={trips.data ?? []} initialValues={editing ?? undefined} onSubmit={save} loading={mutations.save.isPending} />
       </AppModal>
     </Screen>
   );

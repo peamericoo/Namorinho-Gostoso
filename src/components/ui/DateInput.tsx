@@ -71,6 +71,7 @@ export function DateInput({ label, value, error, helperText, required, onChangeT
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityHint={required ? "Campo obrigatório" : undefined}
         onPress={openCalendar}
         disabled={props.editable === false}
         style={({ pressed }) => [styles.trigger, pressed && styles.pressed, open && styles.focused, error && styles.errorInput, props.editable === false && styles.disabled]}

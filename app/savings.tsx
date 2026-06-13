@@ -50,7 +50,7 @@ export default function SavingsScreen() {
         );
       })}
       <AppModal visible={open} title={editing ? "Editar meta" : "Nova meta"} onClose={() => { setOpen(false); setEditing(null); }}>
-        <SavingsGoalForm trips={trips.data ?? []} initialValues={editing ?? undefined} onSubmit={(values) => void save(values)} loading={mutations.save.isPending} />
+        <SavingsGoalForm trips={trips.data ?? []} initialValues={editing ?? undefined} onSubmit={save} loading={mutations.save.isPending} />
       </AppModal>
     </Screen>
   );

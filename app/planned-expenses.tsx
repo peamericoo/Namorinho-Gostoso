@@ -49,7 +49,7 @@ export default function PlannedExpensesScreen() {
         </Card>
       ))}
       <AppModal visible={open} title={editing ? "Editar custo planejado" : "Novo custo planejado"} onClose={() => { setOpen(false); setEditing(null); }}>
-        <PlannedExpenseForm trips={trips.data ?? []} categories={categories.data ?? []} initialValues={editing ?? undefined} onSubmit={(values) => void save(values)} loading={mutations.create.isPending || mutations.update.isPending} />
+        <PlannedExpenseForm trips={trips.data ?? []} categories={categories.data ?? []} initialValues={editing ?? undefined} onSubmit={save} loading={mutations.create.isPending || mutations.update.isPending} />
       </AppModal>
     </Screen>
   );

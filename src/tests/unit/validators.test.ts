@@ -142,6 +142,23 @@ describe("validadores", () => {
     expect(result.success).toBe(false);
   });
 
+  it("normaliza gasto com valor brasileiro e subcategoria vazia", () => {
+    const result = expenseSchema.safeParse({
+      ...validExpense,
+      amount: "123,45",
+      subcategory_id: "",
+      account_label: "",
+      receipt_url: ""
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.amount).toBe(123.45);
+      expect(result.data.subcategory_id).toBeNull();
+      expect(result.data.account_label).toBeNull();
+      expect(result.data.receipt_url).toBeNull();
+    }
+  });
+
   it("bloqueia parcela atual maior que total de parcelas no gasto", () => {
     const result = expenseSchema.safeParse({
       ...validExpense,

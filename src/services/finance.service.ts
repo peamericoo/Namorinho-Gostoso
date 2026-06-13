@@ -21,8 +21,47 @@ type Client = SupabaseClient<Database>;
 
 function raise(error: unknown, fallback = "Não foi possível concluir a operação.") {
   if (!error) return;
-  const message = typeof error === "object" && error && "message" in error ? String((error as { message?: string }).message) : fallback;
-  throw new Error(message || fallback);
+  const message = typeof error === "object" && error && "message" in error ? String((error as { message?: string }).message) : "";
+  throw new Error(toPtBrErrorMessage(message, fallback));
+}
+
+function toPtBrErrorMessage(message: string, fallback: string) {
+  const normalized = message.toLowerCase();
+  if (!message) return fallback;
+  if (normalized.includes("invalid input syntax") && normalized.includes("uuid")) {
+    return "Algum vínculo do formulário está vazio ou inválido. Recarregue a tela e selecione viagem/categoria novamente.";
+  }
+  if (normalized.includes("violates row-level security")) {
+    return "Você não tem permissão para salvar este registro neste espaço.";
+  }
+  if (normalized.includes("duplicate key")) {
+    return "Já existe um registro com essas informações.";
+  }
+  if (normalized.includes("schema cache") || normalized.includes("could not find")) {
+    return "O banco ainda não reconhece a estrutura necessária. Aplique as migrations e tente novamente.";
+  }
+  if (normalized.includes("jwt") || normalized.includes("session")) {
+    return "Sua sessão expirou. Faça login novamente.";
+  }
+  if (normalized.includes("failed to fetch") || normalized.includes("network")) {
+    return "Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.";
+  }
+  return fallback;
+}
+
+function nullableText(value?: string | null) {
+  return typeof value === "string" && value.trim() === "" ? null : value ?? null;
+}
+
+function normalizeExpenseForWrite(values: Partial<Expense>) {
+  return {
+    ...values,
+    subcategory_id: nullableText(values.subcategory_id),
+    receipt_url: nullableText(values.receipt_url),
+    account_label: nullableText(values.account_label),
+    payment_method: nullableText(values.payment_method),
+    notes: nullableText(values.notes)
+  };
 }
 
 export const tableNames = {
@@ -181,13 +220,13 @@ export async function getExpense(id: string) {
 }
 
 export async function createExpense(coupleId: string, values: Partial<Expense>) {
-  const { data, error } = await supabase.from("expenses").insert({ ...values, couple_id: coupleId }).select("*").single();
+  const { data, error } = await supabase.from("expenses").insert({ ...normalizeExpenseForWrite(values), couple_id: coupleId }).select("*").single();
   raise(error, "Não foi possível registrar o gasto.");
   return data as Expense;
 }
 
 export async function updateExpense(id: string, values: Partial<Expense>) {
-  const { data, error } = await supabase.from("expenses").update(values).eq("id", id).select("*").single();
+  const { data, error } = await supabase.from("expenses").update(normalizeExpenseForWrite(values)).eq("id", id).select("*").single();
   raise(error, "Não foi possível atualizar o gasto.");
   return data as Expense;
 }

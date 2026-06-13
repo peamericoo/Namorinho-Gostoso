@@ -33,8 +33,9 @@ export default function CategoriesScreen() {
       <AppModal visible={open} title="Nova categoria" onClose={() => setOpen(false)}>
         <CategoryForm
           loading={mutations.create.isPending}
-          onSubmit={(values) => {
-            mutations.create.mutate(values, { onSuccess: () => setOpen(false) });
+          onSubmit={async (values) => {
+            await mutations.create.mutateAsync(values);
+            setOpen(false);
           }}
         />
       </AppModal>

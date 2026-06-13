@@ -29,6 +29,7 @@ export function Input({ label, error, helperText, required, style, onBlur, onFoc
           onBlur?.(event);
         }}
         accessibilityLabel={props.accessibilityLabel ?? label}
+        accessibilityHint={props.accessibilityHint ?? (required ? "Campo obrigatório" : undefined)}
         accessibilityState={{ disabled: props.editable === false }}
         {...props}
       />

@@ -40,7 +40,7 @@ export default function InstallmentsScreen() {
         </Card>
       ))}
       <AppModal visible={open} title={editing ? "Editar parcelamento" : "Novo parcelamento"} onClose={() => { setOpen(false); setEditing(null); }}>
-        <InstallmentForm trips={trips.data ?? []} initialValues={editing ?? undefined} onSubmit={(values) => void save(values)} loading={mutations.save.isPending} />
+        <InstallmentForm trips={trips.data ?? []} initialValues={editing ?? undefined} onSubmit={save} loading={mutations.save.isPending} />
       </AppModal>
     </Screen>
   );
