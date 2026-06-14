@@ -1,17 +1,47 @@
 import { Redirect, Tabs } from "expo-router";
-import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
-import { BarChart3, Calculator, CircleDollarSign, Map, MoreHorizontal, type LucideIcon } from "lucide-react-native";
+import { useEffect, useRef } from "react";
+import { ActivityIndicator, Animated, Platform, StyleSheet, View } from "react-native";
+import { BarChart3, Calculator, CircleDollarSign, Home, Map, MoreHorizontal, type LucideIcon } from "lucide-react-native";
 import { theme } from "../../src/constants/theme";
 import { useAuth } from "../../src/hooks/useAuth";
 import { useWorkspace } from "../../src/hooks/useWorkspace";
 
-const BASE_TAB_BAR_HEIGHT = 64;
+const BASE_TAB_BAR_HEIGHT = 62;
 
 function TabIcon({ Icon, color, focused, size }: { Icon: LucideIcon; color: string; focused: boolean; size: number }) {
   return (
     <View style={[styles.iconPill, focused && styles.iconPillActive]}>
       <Icon color={color} size={focused ? size + 2 : size} strokeWidth={focused ? 2.8 : 2.35} />
     </View>
+  );
+}
+
+function ActiveTabLabel({ focused, color, label }: { focused: boolean; color: string; label: string }) {
+  const progress = useRef(new Animated.Value(focused ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: focused ? 1 : 0,
+      duration: theme.transition.base,
+      useNativeDriver: false
+    }).start();
+  }, [focused, progress]);
+
+  return (
+    <Animated.Text
+      numberOfLines={1}
+      style={[
+        styles.tabLabel,
+        {
+          color,
+          opacity: progress,
+          maxWidth: progress.interpolate({ inputRange: [0, 1], outputRange: [0, 82] }),
+          transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [3, 0] }) }]
+        }
+      ]}
+    >
+      {label}
+    </Animated.Text>
   );
 }
 
@@ -50,10 +80,11 @@ export default function TabsLayout() {
           ...styles.tabBarDepth
         },
         tabBarItemStyle: {
-          borderRadius: theme.radius.md,
-          marginHorizontal: 4,
+          borderRadius: theme.radius.pill,
+          marginHorizontal: 2,
           marginTop: 6,
           marginBottom: 6,
+          minWidth: 44,
           paddingTop: 0,
           paddingBottom: 0,
           overflow: "hidden"
@@ -76,7 +107,18 @@ export default function TabsLayout() {
           title: "Painel",
           tabBarActiveTintColor: theme.colors.coupleStrong,
           tabBarActiveBackgroundColor: theme.colors.couple,
-          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={BarChart3} color={color} focused={focused} size={size} />
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Home} color={color} focused={focused} size={size} />,
+          tabBarLabel: ({ focused, color }) => <ActiveTabLabel focused={focused} color={color} label="Painel" />
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: "Análises",
+          tabBarActiveTintColor: theme.colors.coupleStrong,
+          tabBarActiveBackgroundColor: theme.colors.couple,
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={BarChart3} color={color} focused={focused} size={size} />,
+          tabBarLabel: ({ focused, color }) => <ActiveTabLabel focused={focused} color={color} label="Análises" />
         }}
       />
       <Tabs.Screen
@@ -85,7 +127,8 @@ export default function TabsLayout() {
           title: "Viagens",
           tabBarActiveTintColor: theme.colors.pedroStrong,
           tabBarActiveBackgroundColor: theme.colors.pedro,
-          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Map} color={color} focused={focused} size={size} />
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Map} color={color} focused={focused} size={size} />,
+          tabBarLabel: ({ focused, color }) => <ActiveTabLabel focused={focused} color={color} label="Viagens" />
         }}
       />
       <Tabs.Screen
@@ -94,7 +137,8 @@ export default function TabsLayout() {
           title: "Gastos",
           tabBarActiveTintColor: theme.colors.successStrong,
           tabBarActiveBackgroundColor: theme.colors.success,
-          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={CircleDollarSign} color={color} focused={focused} size={size} />
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={CircleDollarSign} color={color} focused={focused} size={size} />,
+          tabBarLabel: ({ focused, color }) => <ActiveTabLabel focused={focused} color={color} label="Gastos" />
         }}
       />
       <Tabs.Screen
@@ -103,7 +147,8 @@ export default function TabsLayout() {
           title: "Simulador",
           tabBarActiveTintColor: theme.colors.warningStrong,
           tabBarActiveBackgroundColor: theme.colors.warning,
-          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Calculator} color={color} focused={focused} size={size} />
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={Calculator} color={color} focused={focused} size={size} />,
+          tabBarLabel: ({ focused, color }) => <ActiveTabLabel focused={focused} color={color} label="Simular" />
         }}
       />
       <Tabs.Screen
@@ -112,7 +157,8 @@ export default function TabsLayout() {
           title: "Mais",
           tabBarActiveTintColor: theme.colors.camillyStrong,
           tabBarActiveBackgroundColor: theme.colors.camilly,
-          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={MoreHorizontal} color={color} focused={focused} size={size} />
+          tabBarIcon: ({ color, focused, size }) => <TabIcon Icon={MoreHorizontal} color={color} focused={focused} size={size} />,
+          tabBarLabel: ({ focused, color }) => <ActiveTabLabel focused={focused} color={color} label="Mais" />
         }}
       />
     </Tabs>
@@ -142,5 +188,12 @@ const styles = StyleSheet.create({
   },
   iconPillActive: {
     transform: [{ scale: 1.04 }]
+  },
+  tabLabel: {
+    fontWeight: "900",
+    fontSize: 11,
+    lineHeight: 14,
+    includeFontPadding: false,
+    overflow: "hidden"
   }
 });
