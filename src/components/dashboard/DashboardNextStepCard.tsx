@@ -74,7 +74,8 @@ function TravelIllustration() {
       <Circle cx={112} cy={98} r={5} fill="#475569" />
       <Path d="M131 57 C142 43 154 44 164 57" stroke="#FFB7C2" strokeWidth={5} strokeLinecap="round" />
       <Path d="M137 57 H171" stroke="#FFB7C2" strokeWidth={5} strokeLinecap="round" />
-      <Path d="M17 82 H169" stroke="#FFDCE2" strokeWidth={4} strokeLinecap="round" />
+      <Path d="M17 82 H64" stroke="#FFDCE2" strokeWidth={4} strokeLinecap="round" />
+      <Path d="M126 82 H169" stroke="#FFDCE2" strokeWidth={4} strokeLinecap="round" />
       <Circle cx={150} cy={42} r={5} fill="#FFD3DA" />
       <Circle cx={34} cy={23} r={4} fill="#FFD3DA" />
     </Svg>

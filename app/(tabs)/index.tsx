@@ -49,8 +49,6 @@ export default function DashboardScreen() {
 
   return (
     <Screen maxWidth={DASHBOARD_MAX_WIDTH} contentStyle={styles.screenContent}>
-      <DashboardOrnaments />
-
       {dashboard.isLoading ? (
         <>
           <Skeleton />
@@ -143,24 +141,6 @@ function nextActionFor(trip: Trip, expenses: Expense[], plannedExpenses: Planned
   };
 }
 
-function DashboardOrnaments() {
-  return (
-    <View style={styles.ornaments}>
-      <View style={styles.topBlob} />
-      <View style={styles.leftPin}>
-        <View style={styles.pinHead} />
-        <View style={styles.pinTail} />
-      </View>
-      <View style={styles.leaves}>
-        <View style={[styles.leaf, styles.leafOne]} />
-        <View style={[styles.leaf, styles.leafTwo]} />
-        <View style={[styles.leaf, styles.leafThree]} />
-        <View style={[styles.leaf, styles.leafFour]} />
-      </View>
-    </View>
-  );
-}
-
 function AnimatedSection({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: StyleProp<ViewStyle> }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(14)).current;
@@ -188,10 +168,7 @@ function AnimatedSection({ children, delay = 0, style }: { children: React.React
   return <Animated.View style={[style, { opacity, transform: [{ translateY }] }]}>{children}</Animated.View>;
 }
 
-const palette = {
-  primary: "#FF3F5F",
-  ink: "#111827"
-};
+const palette = { ink: "#111827" };
 
 const styles = StyleSheet.create({
   screenContent: {
@@ -261,86 +238,5 @@ const styles = StyleSheet.create({
   financeWide: {
     flex: 0.95,
     minWidth: 0
-  },
-  ornaments: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: "hidden",
-    pointerEvents: "none"
-  },
-  topBlob: {
-    position: "absolute",
-    top: -70,
-    right: -130,
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    backgroundColor: "#FFE6EB",
-    opacity: 0.62
-  },
-  leftPin: {
-    position: "absolute",
-    left: -74,
-    bottom: 128,
-    width: 120,
-    height: 80,
-    opacity: 0.52
-  },
-  pinHead: {
-    position: "absolute",
-    left: 35,
-    top: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 9,
-    borderColor: palette.primary,
-    backgroundColor: theme.colors.surface
-  },
-  pinTail: {
-    position: "absolute",
-    left: 8,
-    top: 54,
-    width: 94,
-    height: 22,
-    borderBottomWidth: 2,
-    borderColor: "#FFB7C2",
-    borderStyle: "dashed",
-    borderRadius: 50,
-    transform: [{ rotate: "-8deg" }]
-  },
-  leaves: {
-    position: "absolute",
-    right: -22,
-    bottom: -18,
-    width: 118,
-    height: 150,
-    opacity: 0.5
-  },
-  leaf: {
-    position: "absolute",
-    width: 25,
-    height: 70,
-    borderRadius: 28,
-    backgroundColor: "#B8796F"
-  },
-  leafOne: {
-    left: 42,
-    bottom: 0,
-    transform: [{ rotate: "-31deg" }]
-  },
-  leafTwo: {
-    left: 66,
-    bottom: 24,
-    transform: [{ rotate: "22deg" }]
-  },
-  leafThree: {
-    left: 18,
-    bottom: 34,
-    transform: [{ rotate: "-48deg" }]
-  },
-  leafFour: {
-    left: 82,
-    bottom: 64,
-    transform: [{ rotate: "36deg" }]
   }
 });
