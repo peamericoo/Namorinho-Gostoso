@@ -8,7 +8,6 @@ import { PlannedVsActualChart } from "../../src/components/charts/PlannedVsActua
 import { SpendingByCategoryChart } from "../../src/components/charts/SpendingByCategoryChart";
 import { AnalyticsFilterBar, type AnalyticsFilters } from "../../src/components/analytics/AnalyticsFilterBar";
 import { AnalyticsMetricGrid } from "../../src/components/analytics/AnalyticsMetricGrid";
-import { AnalyticsRankingCard } from "../../src/components/analytics/AnalyticsRankingCard";
 import { AnalyticsWidget } from "../../src/components/analytics/AnalyticsWidget";
 import { Badge } from "../../src/components/ui/Badge";
 import { EmptyState } from "../../src/components/ui/EmptyState";
@@ -41,6 +40,20 @@ const visualDeckItems = [
 ] as const;
 
 type VisualDeckId = (typeof visualDeckItems)[number]["id"];
+
+const detailDeckItems = [
+  { id: "recorte", label: "Recorte", title: "Recorte personalizável", subtitle: "Quebra completa do recorte atual por métrica e agrupamento." },
+  { id: "viagens", label: "Viagens", title: "Comparação entre viagens", subtitle: "Compare impacto, orçamento e risco entre as viagens selecionadas." }
+] as const;
+
+type DetailDeckId = (typeof detailDeckItems)[number]["id"];
+
+const priorityDeckItems = [
+  { id: "gastos", label: "Maiores gastos", title: "Maiores gastos", subtitle: "Ranking dos registros que mais pesaram no período." },
+  { id: "leituras", label: "Leituras rápidas", title: "Leituras rápidas", subtitle: "Sinais úteis para decidir onde olhar primeiro." }
+] as const;
+
+type PriorityDeckId = (typeof priorityDeckItems)[number]["id"];
 
 export default function AnalyticsScreen() {
   const dashboard = useDashboard();
@@ -104,22 +117,16 @@ export default function AnalyticsScreen() {
             </View>
 
             <SectionTitle title="Detalhamento" subtitle="Quebra por categoria, pessoa ou viagem, conforme o controle escolhido." />
-            <View style={[styles.grid, isWide && styles.gridWide]}>
-              <View style={[styles.widget, isWide && styles.widgetWide]}>
-                <BreakdownWidget filters={filters} expenses={filteredExpenses} plannedExpenses={filteredPlanned} trips={data.trips} categories={data.categories} style={styles.detailCard} />
-              </View>
-              <View style={[styles.widget, isWide && styles.widgetWide]}>
-                <TripComparisonWidget trips={scopedTrips} expenses={filteredExpenses} plannedExpenses={filteredPlanned} allPlannedExpenses={data.plannedExpenses} style={styles.detailCard} />
+            <View style={styles.grid}>
+              <View style={styles.widget}>
+                <AnalyticsDetailDeck filters={filters} expenses={filteredExpenses} plannedExpenses={filteredPlanned} trips={data.trips} scopedTrips={scopedTrips} categories={data.categories} allPlannedExpenses={data.plannedExpenses} />
               </View>
             </View>
 
             <SectionTitle title="Prioridades" subtitle="Itens que merecem atenção primeiro." />
-            <View style={[styles.grid, isWide && styles.gridWide]}>
-              <View style={[styles.widget, isWide && styles.widgetWide]}>
-                <AnalyticsRankingCard expenses={filteredExpenses} onViewAll={() => openExpensesWithAnalyticsFilters(filters)} style={styles.priorityCard} />
-              </View>
-              <View style={[styles.widget, isWide && styles.widgetWide]}>
-                <InsightWidget actualTotal={actualTotal} plannedTotal={plannedTotal} highestTrip={highestTrip} settlementAmount={settlement.amount} style={styles.priorityCard} />
+            <View style={styles.grid}>
+              <View style={styles.widget}>
+                <AnalyticsPriorityDeck expenses={filteredExpenses} actualTotal={actualTotal} plannedTotal={plannedTotal} highestTrip={highestTrip} settlementAmount={settlement.amount} onViewAllExpenses={() => openExpensesWithAnalyticsFilters(filters)} />
               </View>
             </View>
           </AnimatedSection>
@@ -169,46 +176,21 @@ function FilterDock({ filters, trips, onOpen, onReset }: { filters: AnalyticsFil
 }
 
 function AnalyticsVisualDeck({ expenses, categories, plannedTotal, actualTotal }: { expenses: Expense[]; categories: Category[]; plannedTotal: number; actualTotal: number }) {
-  const [active, setActive] = useState<VisualDeckId>("categoria");
-  const opacity = useRef(new Animated.Value(1)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
-  const activeItem = visualDeckItems.find((item) => item.id === active) ?? visualDeckItems[0];
-
-  function choose(next: VisualDeckId) {
-    if (next === active) return;
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: 0.35, duration: 90, useNativeDriver: false }),
-      Animated.timing(translateX, { toValue: -10, duration: 90, useNativeDriver: false })
-    ]).start(() => {
-      setActive(next);
-      translateX.setValue(12);
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: false }),
-        Animated.spring(translateX, { toValue: 0, speed: 18, bounciness: 4, useNativeDriver: false })
-      ]).start();
-    });
-  }
+  const motion = useDeckMotion<VisualDeckId>("categoria");
+  const activeItem = visualDeckItems.find((item) => item.id === motion.active) ?? visualDeckItems[0];
 
   return (
     <AnalyticsWidget
       title={activeItem.title}
       subtitle={activeItem.subtitle}
-      style={styles.visualDeck}
-      right={
-        <View style={styles.deckTabs}>
-          {visualDeckItems.map((item) => (
-            <Pressable key={item.id} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: item.id === active }} onPress={() => choose(item.id)} style={({ pressed }) => [styles.deckTab, item.id === active && styles.deckTabActive, pressed && styles.pressablePressed]}>
-              <Text style={[styles.deckTabText, item.id === active && styles.deckTabTextActive]}>{item.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      }
+      style={styles.deckCard}
+      right={<DeckTabs items={visualDeckItems} active={motion.active} onChange={motion.choose} />}
     >
-      <Animated.View style={[styles.deckBody, { opacity, transform: [{ translateX }] }]}>
-        {active === "categoria" ? <SpendingByCategoryChart expenses={expenses} categories={categories} framed={false} /> : null}
-        {active === "orcamento" ? <PlannedVsActualChart planned={plannedTotal} actual={actualTotal} framed={false} /> : null}
-        {active === "divisao" ? <PersonSplitChart expenses={expenses} framed={false} /> : null}
-        {active === "evolucao" ? <MonthlyEvolutionChart expenses={expenses} plannedTotal={plannedTotal} framed={false} /> : null}
+      <Animated.View style={[styles.deckBody, motion.animatedStyle]}>
+        {motion.active === "categoria" ? <SpendingByCategoryChart expenses={expenses} categories={categories} framed={false} /> : null}
+        {motion.active === "orcamento" ? <PlannedVsActualChart planned={plannedTotal} actual={actualTotal} framed={false} /> : null}
+        {motion.active === "divisao" ? <PersonSplitChart expenses={expenses} framed={false} /> : null}
+        {motion.active === "evolucao" ? <MonthlyEvolutionChart expenses={expenses} plannedTotal={plannedTotal} framed={false} /> : null}
       </Animated.View>
     </AnalyticsWidget>
   );
@@ -241,41 +223,98 @@ function plannedTotalForScope(trips: Trip[], filteredPlanned: PlannedExpense[], 
   return sum(trips.map((trip) => trip.planned_budget || plannedByTrip(trip.id, allPlanned)));
 }
 
-function BreakdownWidget({
+function AnalyticsDetailDeck({
   filters,
   expenses,
   plannedExpenses,
   trips,
+  scopedTrips,
   categories,
-  style
+  allPlannedExpenses
 }: {
   filters: AnalyticsFilters;
   expenses: Expense[];
   plannedExpenses: PlannedExpense[];
   trips: Trip[];
+  scopedTrips: Trip[];
   categories: Category[];
-  style?: StyleProp<ViewStyle>;
+  allPlannedExpenses: PlannedExpense[];
 }) {
-  const [detailOpen, setDetailOpen] = useState(false);
-  const allRows = breakdownRows(filters, expenses, plannedExpenses, trips, categories, Infinity);
-  const rows = allRows.slice(0, 6);
+  const motion = useDeckMotion<DetailDeckId>("recorte");
+  const activeItem = detailDeckItems.find((item) => item.id === motion.active) ?? detailDeckItems[0];
+
   return (
     <AnalyticsWidget
-      title="Recorte personalizável"
-      subtitle={`Métrica atual: ${analyticsLabel(filters.metricMode)} · agrupado por ${analyticsLabel(filters.viewMode)}.`}
-      right={<Badge label={rows.length ? `${rows.length} grupo(s)` : "Sem dados"} tone={rows.length ? "couple" : "neutral"} />}
-      style={style}
+      title={activeItem.title}
+      subtitle={activeItem.subtitle}
+      style={styles.deckCard}
+      right={<DeckTabs items={detailDeckItems} active={motion.active} onChange={motion.choose} />}
     >
+      <Animated.View style={[styles.deckBody, motion.animatedStyle]}>
+        {motion.active === "recorte" ? <BreakdownContent filters={filters} expenses={expenses} plannedExpenses={plannedExpenses} trips={trips} categories={categories} /> : null}
+        {motion.active === "viagens" ? <TripComparisonContent trips={scopedTrips} expenses={expenses} plannedExpenses={plannedExpenses} allPlannedExpenses={allPlannedExpenses} /> : null}
+      </Animated.View>
+    </AnalyticsWidget>
+  );
+}
+
+function AnalyticsPriorityDeck({
+  expenses,
+  actualTotal,
+  plannedTotal,
+  highestTrip,
+  settlementAmount,
+  onViewAllExpenses
+}: {
+  expenses: Expense[];
+  actualTotal: number;
+  plannedTotal: number;
+  highestTrip: ReturnType<typeof tripComparisonRows>[number] | null;
+  settlementAmount: number;
+  onViewAllExpenses: () => void;
+}) {
+  const motion = useDeckMotion<PriorityDeckId>("gastos");
+  const activeItem = priorityDeckItems.find((item) => item.id === motion.active) ?? priorityDeckItems[0];
+
+  return (
+    <AnalyticsWidget
+      title={activeItem.title}
+      subtitle={activeItem.subtitle}
+      style={styles.deckCard}
+      right={<DeckTabs items={priorityDeckItems} active={motion.active} onChange={motion.choose} />}
+    >
+      <Animated.View style={[styles.deckBody, motion.animatedStyle]}>
+        {motion.active === "gastos" ? <RankingContent expenses={expenses} onViewAll={onViewAllExpenses} /> : null}
+        {motion.active === "leituras" ? <InsightContent actualTotal={actualTotal} plannedTotal={plannedTotal} highestTrip={highestTrip} settlementAmount={settlementAmount} /> : null}
+      </Animated.View>
+    </AnalyticsWidget>
+  );
+}
+
+function BreakdownContent({ filters, expenses, plannedExpenses, trips, categories }: { filters: AnalyticsFilters; expenses: Expense[]; plannedExpenses: PlannedExpense[]; trips: Trip[]; categories: Category[] }) {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const allRows = breakdownRows(filters, expenses, plannedExpenses, trips, categories, Infinity);
+  const rows = allRows.slice(0, 8);
+
+  return (
+    <>
+      <View style={styles.deckSummaryRow}>
+        <MiniStat label="Métrica" value={analyticsLabel(filters.metricMode)} tone="couple" />
+        <MiniStat label="Agrupado por" value={analyticsLabel(filters.viewMode)} tone="neutral" />
+        <MiniStat label="Grupos" value={`${allRows.length}`} tone="success" />
+      </View>
       <View style={styles.rows}>
         {rows.length === 0 ? <Text style={styles.empty}>Sem dados para esse recorte.</Text> : null}
-        {rows.map((row) => (
-          <View key={row.label} style={styles.row}>
-            <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{row.label}</Text>
-              <Text style={styles.rowMeta}>{row.helper}</Text>
+        {rows.map((row, index) => (
+          <AnimatedListItem key={row.label} index={index}>
+            <View style={styles.row}>
+              <View style={styles.rowCopy}>
+                <Text style={styles.rowTitle}>{row.label}</Text>
+                <Text style={styles.rowMeta}>{row.helper}</Text>
+              </View>
+              <Text style={styles.rowAmount}>{money(row.amount)}</Text>
             </View>
-            <Text style={styles.rowAmount}>{money(row.amount)}</Text>
-          </View>
+          </AnimatedListItem>
         ))}
         <Pressable accessibilityRole="button" accessibilityLabel="Ver detalhamento completo" onPress={() => setDetailOpen(true)} disabled={allRows.length === 0} style={({ pressed }) => [styles.widgetFooter, allRows.length === 0 && styles.widgetFooterDisabled, pressed && allRows.length > 0 && styles.pressablePressed]}>
           <Text style={styles.footerAction}>Ver detalhamento completo</Text>
@@ -284,18 +323,111 @@ function BreakdownWidget({
       <AppModal visible={detailOpen} title="Detalhamento completo" onClose={() => setDetailOpen(false)}>
         <View style={styles.modalRows}>
           <Text style={styles.modalHint}>{allRows.length} grupo(s) no recorte atual.</Text>
-          {allRows.map((row) => (
-            <View key={row.label} style={styles.modalRow}>
-              <View style={styles.rowCopy}>
-                <Text style={styles.rowTitle}>{row.label}</Text>
-                <Text style={styles.rowMeta}>{row.helper}</Text>
+          {allRows.map((row, index) => (
+            <AnimatedListItem key={row.label} index={index}>
+              <View style={styles.modalRow}>
+                <View style={styles.rowCopy}>
+                  <Text style={styles.rowTitle}>{row.label}</Text>
+                  <Text style={styles.rowMeta}>{row.helper}</Text>
+                </View>
+                <Text style={styles.rowAmount}>{money(row.amount)}</Text>
               </View>
-              <Text style={styles.rowAmount}>{money(row.amount)}</Text>
-            </View>
+            </AnimatedListItem>
           ))}
         </View>
       </AppModal>
-    </AnalyticsWidget>
+    </>
+  );
+}
+
+function TripComparisonContent({ trips, expenses, plannedExpenses, allPlannedExpenses }: { trips: Trip[]; expenses: Expense[]; plannedExpenses: PlannedExpense[]; allPlannedExpenses: PlannedExpense[] }) {
+  const rows = tripComparisonRows(trips, expenses, plannedExpenses, allPlannedExpenses).slice(0, 8);
+  const comparisonTotal = sum(rows.map((row) => row.summary.actual));
+  const comparisonDifference = sum(rows.map((row) => row.summary.difference));
+
+  return (
+    <>
+      <View style={styles.deckSummaryRow}>
+        <MiniStat label="Viagens" value={`${rows.length}`} tone="neutral" />
+        <MiniStat label="Realizado" value={money(comparisonTotal)} tone="couple" />
+        <MiniStat label="Diferença" value={money(comparisonDifference)} tone={comparisonDifference < 0 ? "danger" : "success"} />
+      </View>
+      <View style={styles.rows}>
+        {rows.length === 0 ? <Text style={styles.empty}>Sem viagens para comparar.</Text> : null}
+        {rows.map((row, index) => (
+          <AnimatedListItem key={row.trip.id} index={index}>
+            <View style={styles.row}>
+              <View style={styles.rowCopy}>
+                <Text style={styles.rowTitle}>{row.trip.title}</Text>
+                <Text style={styles.rowMeta}>{dateBR(row.trip.start_date)} - {dateBR(row.trip.end_date)}</Text>
+                <Text style={styles.rowMeta}>Planejado {money(row.summary.planned)} · diferença {money(row.summary.difference)}</Text>
+              </View>
+              <Badge label={money(row.summary.actual)} tone={row.summary.difference < 0 ? "danger" : "success"} />
+            </View>
+          </AnimatedListItem>
+        ))}
+        <Pressable accessibilityRole="button" accessibilityLabel="Ver todas as viagens" onPress={() => router.push("/trips")} style={({ pressed }) => [styles.widgetFooter, pressed && styles.pressablePressed]}>
+          <Text style={styles.footerAction}>Ver todas as viagens</Text>
+        </Pressable>
+      </View>
+    </>
+  );
+}
+
+function RankingContent({ expenses, onViewAll }: { expenses: Expense[]; onViewAll: () => void }) {
+  const rows = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 8);
+  return (
+    <View style={styles.rows}>
+      {rows.length === 0 ? <Text style={styles.empty}>Sem gastos para ranquear.</Text> : null}
+      {rows.map((expense, index) => (
+        <AnimatedListItem key={expense.id} index={index}>
+          <View style={styles.rankingRow}>
+            <View style={styles.rankingPosition}>
+              <Text style={styles.rankingPositionText}>{index + 1}</Text>
+            </View>
+            <View style={styles.rowCopy}>
+              <Text style={styles.rowTitle}>{expense.description}</Text>
+              <Text style={styles.rowMeta}>{dateBR(expense.spent_at)} · {expense.category?.name ?? "Sem categoria"} · {expense.trip?.title ?? "Sem viagem"}</Text>
+            </View>
+            <Text style={styles.rowAmount}>{money(expense.amount)}</Text>
+          </View>
+        </AnimatedListItem>
+      ))}
+      <Pressable accessibilityRole="button" accessibilityLabel="Ver todos os gastos" onPress={onViewAll} style={({ pressed }) => [styles.widgetFooter, pressed && styles.pressablePressed]}>
+        <Text style={styles.footerAction}>Ver todos os gastos</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function InsightContent({ actualTotal, plannedTotal, highestTrip, settlementAmount }: { actualTotal: number; plannedTotal: number; highestTrip: ReturnType<typeof tripComparisonRows>[number] | null; settlementAmount: number }) {
+  const delta = plannedTotal - actualTotal;
+  const insights = [
+    {
+      title: delta < 0 ? "Orçamento pressionado" : "Orçamento confortável",
+      message: delta < 0 ? `O recorte está ${money(Math.abs(delta))} acima do planejado.` : `Ainda há ${money(delta)} de folga no recorte.`,
+      tone: delta < 0 ? ("danger" as const) : ("success" as const)
+    },
+    {
+      title: "Viagem de maior impacto",
+      message: highestTrip ? `${highestTrip.trip.title} concentra ${money(highestTrip.summary.actual)} realizados.` : "Ainda não há uma viagem dominante no recorte.",
+      tone: "couple" as const
+    },
+    {
+      title: "Acerto estimado",
+      message: settlementAmount > 0 ? `Há ${money(settlementAmount)} de diferença para revisar.` : "A divisão do recorte está equilibrada.",
+      tone: settlementAmount > 0 ? ("warning" as const) : ("success" as const)
+    }
+  ];
+
+  return (
+    <View style={styles.insightsGrid}>
+      {insights.map((insight, index) => (
+        <AnimatedListItem key={insight.title} index={index}>
+          <Insight title={insight.title} message={insight.message} tone={insight.tone} />
+        </AnimatedListItem>
+      ))}
+    </View>
   );
 }
 
@@ -338,39 +470,6 @@ function groupedAmounts<T>(rows: T[], keyFor: (row: T) => string, amountFor: (ro
     .slice(0, limit);
 }
 
-function TripComparisonWidget({ trips, expenses, plannedExpenses, allPlannedExpenses, style }: { trips: Trip[]; expenses: Expense[]; plannedExpenses: PlannedExpense[]; allPlannedExpenses: PlannedExpense[]; style?: StyleProp<ViewStyle> }) {
-  const rows = tripComparisonRows(trips, expenses, plannedExpenses, allPlannedExpenses).slice(0, 6);
-  const comparisonTotal = sum(rows.map((row) => row.summary.actual));
-  const comparisonDifference = sum(rows.map((row) => row.summary.difference));
-  return (
-    <AnalyticsWidget title="Comparação entre viagens" subtitle="Veja quais viagens concentram maior realizado e risco de orçamento." style={style}>
-      <View style={styles.rows}>
-        {rows.length === 0 ? <Text style={styles.empty}>Sem viagens para comparar.</Text> : null}
-        {rows.map((row) => (
-          <View key={row.trip.id} style={styles.row}>
-            <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{row.trip.title}</Text>
-              <Text style={styles.rowMeta}>{dateBR(row.trip.start_date)} - {dateBR(row.trip.end_date)}</Text>
-              <Text style={styles.rowMeta}>Planejado {money(row.summary.planned)} · diferença {money(row.summary.difference)}</Text>
-            </View>
-            <Badge label={money(row.summary.actual)} tone={row.summary.difference < 0 ? "danger" : "success"} />
-          </View>
-        ))}
-        {rows.length ? (
-          <View style={styles.comparisonStats}>
-            <MiniStat label="Viagens" value={`${rows.length}`} tone="neutral" />
-            <MiniStat label="Realizado" value={money(comparisonTotal)} tone="couple" />
-            <MiniStat label="Diferença" value={money(comparisonDifference)} tone={comparisonDifference < 0 ? "danger" : "success"} />
-          </View>
-        ) : null}
-        <Pressable accessibilityRole="button" accessibilityLabel="Ver todas as viagens" onPress={() => router.push("/trips")} style={({ pressed }) => [styles.widgetFooter, pressed && styles.pressablePressed]}>
-          <Text style={styles.footerAction}>Ver todas as viagens</Text>
-        </Pressable>
-      </View>
-    </AnalyticsWidget>
-  );
-}
-
 function MiniStat({ label, value, tone }: { label: string; value: string; tone: "neutral" | "couple" | "success" | "danger" }) {
   return (
     <View style={[styles.miniStat, styles[`${tone}MiniStat`]]}>
@@ -390,19 +489,6 @@ function tripComparisonRows(trips: Trip[], expenses: Expense[], plannedExpenses:
     })
     .filter((row) => row.summary.actual > 0 || row.summary.planned > 0)
     .sort((a, b) => b.summary.actual - a.summary.actual);
-}
-
-function InsightWidget({ actualTotal, plannedTotal, highestTrip, settlementAmount, style }: { actualTotal: number; plannedTotal: number; highestTrip: ReturnType<typeof tripComparisonRows>[number] | null; settlementAmount: number; style?: StyleProp<ViewStyle> }) {
-  const delta = plannedTotal - actualTotal;
-  return (
-    <AnalyticsWidget title="Leituras rápidas" subtitle="Sinais úteis para decidir onde olhar primeiro." style={style}>
-      <View style={styles.insights}>
-        <Insight title={delta < 0 ? "Orçamento pressionado" : "Orçamento confortável"} message={delta < 0 ? `O recorte está ${money(Math.abs(delta))} acima do planejado.` : `Ainda há ${money(delta)} de folga no recorte.`} tone={delta < 0 ? "danger" : "success"} />
-        <Insight title="Viagem de maior impacto" message={highestTrip ? `${highestTrip.trip.title} concentra ${money(highestTrip.summary.actual)} realizados.` : "Ainda não há uma viagem dominante no recorte."} tone="couple" />
-        <Insight title="Acerto estimado" message={settlementAmount > 0 ? `Há ${money(settlementAmount)} de diferença para revisar.` : "A divisão do recorte está equilibrada."} tone={settlementAmount > 0 ? "warning" : "success"} />
-      </View>
-    </AnalyticsWidget>
-  );
 }
 
 function Insight({ title, message, tone }: { title: string; message: string; tone: "couple" | "success" | "warning" | "danger" }) {
@@ -444,6 +530,71 @@ function openExpensesWithAnalyticsFilters(filters: AnalyticsFilters) {
   if (filters.dateTo) params.dateTo = filters.dateTo;
   if (filters.person !== "todos") params.analyticsPerson = filters.person;
   router.push({ pathname: "/expenses", params } as never);
+}
+
+function useDeckMotion<T extends string>(initial: T) {
+  const [active, setActive] = useState<T>(initial);
+  const opacity = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  function choose(next: T) {
+    if (next === active) return;
+
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 0.18, duration: 95, useNativeDriver: false }),
+      Animated.timing(translateX, { toValue: -14, duration: 95, useNativeDriver: false }),
+      Animated.timing(scale, { toValue: 0.985, duration: 95, useNativeDriver: false })
+    ]).start(() => {
+      setActive(next);
+      translateX.setValue(14);
+
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 190, useNativeDriver: false }),
+        Animated.spring(translateX, { toValue: 0, speed: 18, bounciness: 5, useNativeDriver: false }),
+        Animated.spring(scale, { toValue: 1, speed: 18, bounciness: 5, useNativeDriver: false })
+      ]).start();
+    });
+  }
+
+  return {
+    active,
+    choose,
+    animatedStyle: {
+      opacity,
+      transform: [{ translateX }, { scale }]
+    }
+  };
+}
+
+function DeckTabs<T extends string>({ items, active, onChange }: { items: readonly { id: T; label: string }[]; active: T; onChange: (id: T) => void }) {
+  return (
+    <View style={styles.deckTabs}>
+      {items.map((item) => (
+        <Pressable key={item.id} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: item.id === active }} onPress={() => onChange(item.id)} style={({ pressed }) => [styles.deckTab, item.id === active && styles.deckTabActive, pressed && styles.pressablePressed]}>
+          <Text style={[styles.deckTabText, item.id === active && styles.deckTabTextActive]}>{item.label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function AnimatedListItem({ children, index }: { children: React.ReactNode; index: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(10)).current;
+
+  useEffect(() => {
+    const delay = Math.min(index * 35, 210);
+    const animation = Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 220, delay, useNativeDriver: false }),
+      Animated.spring(translateY, { toValue: 0, delay, speed: 20, bounciness: 4, useNativeDriver: false })
+    ]);
+
+    animation.start();
+    return () => animation.stop();
+  }, [index, opacity, translateY]);
+
+  return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
 }
 
 function AnimatedSection({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: StyleProp<ViewStyle> }) {
@@ -632,8 +783,8 @@ const styles = StyleSheet.create({
     flexBasis: "48%",
     minWidth: 440
   },
-  visualDeck: {
-    minHeight: 390
+  deckCard: {
+    minHeight: 430
   },
   deckTabs: {
     flexDirection: "row",
@@ -665,14 +816,14 @@ const styles = StyleSheet.create({
     color: "#FF3F5F"
   },
   deckBody: {
-    minHeight: 260,
-    justifyContent: "center"
+    minHeight: 304,
+    justifyContent: "center",
+    gap: theme.spacing.md
   },
-  detailCard: {
-    minHeight: 360
-  },
-  priorityCard: {
-    minHeight: 430
+  deckSummaryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.sm
   },
   rows: {
     gap: 0
@@ -798,10 +949,14 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: "900"
   },
-  insights: {
+  insightsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.md
   },
   insight: {
+    flex: 1,
+    minWidth: 260,
     minHeight: 92,
     borderRadius: theme.radius.md,
     borderWidth: 1,
@@ -824,5 +979,28 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     fontWeight: "700",
     lineHeight: 19
+  },
+  rankingRow: {
+    minHeight: 68,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.line,
+    paddingVertical: 10
+  },
+  rankingPosition: {
+    width: 34,
+    height: 34,
+    borderRadius: theme.radius.pill,
+    backgroundColor: "#EEE3FF",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  rankingPositionText: {
+    color: theme.colors.coupleStrong,
+    fontSize: 12,
+    fontWeight: "900"
   }
 });

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { theme } from "../../constants/theme";
 import { money } from "../../lib/formatters";
 import type { Category, Expense } from "../../types/models";
@@ -32,9 +32,6 @@ export function SpendingByCategoryChart({ expenses, categories, framed = true }:
         ))}
       </View>
       {rows.length === 0 ? <Text style={styles.empty}>Registre gastos para ver o gráfico.</Text> : null}
-      <Pressable accessibilityRole="button" accessibilityLabel="Ver todas as categorias" style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}>
-        <Text style={styles.ctaText}>Ver todas as categorias</Text>
-      </Pressable>
     </>
   );
 
@@ -56,24 +53,5 @@ const styles = StyleSheet.create({
   track: { height: 9, borderRadius: theme.radius.pill, backgroundColor: "#EEF2F7", overflow: "hidden" },
   fill: { height: "100%", borderRadius: theme.radius.pill },
   value: { color: "#334155", fontWeight: "800", fontSize: 12 },
-  empty: { color: theme.colors.muted, fontWeight: "700" },
-  cta: {
-    minHeight: 44,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.line,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 6,
-    backgroundColor: "#FFFFFF"
-  },
-  ctaPressed: {
-    transform: [{ scale: 0.992 }],
-    borderColor: theme.colors.focusRing
-  },
-  ctaText: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    fontWeight: "900"
-  }
+  empty: { color: theme.colors.muted, fontWeight: "700" }
 });

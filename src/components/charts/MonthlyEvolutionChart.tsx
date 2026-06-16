@@ -31,21 +31,21 @@ export function MonthlyEvolutionChart({ expenses, plannedTotal = 0, framed = tru
         {rows.length === 0 ? (
           <Text style={styles.empty}>Sem gastos mensais ainda.</Text>
         ) : (
-          <Svg width="100%" height="170" viewBox="0 0 360 170">
+          <Svg width="100%" height="260" viewBox="0 0 1200 260" style={styles.svg}>
             {[0, 1, 2].map((line) => {
-              const y = 24 + line * 45;
-              return <Line key={line} x1="36" x2="344" y1={y} y2={y} stroke="#EEF2F7" strokeWidth="1.5" />;
+              const y = 38 + line * 70;
+              return <Line key={line} x1="136" x2="1160" y1={y} y2={y} stroke="#EEF2F7" strokeWidth="2" />;
             })}
-            <SvgText x="2" y="28" fill="#64748B" fontSize="11" fontWeight="700">{money(max)}</SvgText>
-            <SvgText x="2" y="73" fill="#64748B" fontSize="11" fontWeight="700">{money(max / 2)}</SvgText>
-            <SvgText x="2" y="118" fill="#64748B" fontSize="11" fontWeight="700">R$ 0</SvgText>
-            <Path d={pathFor(plannedPoints)} fill="none" stroke="#38A8E8" strokeWidth="3" strokeDasharray="7 7" strokeLinecap="round" strokeLinejoin="round" />
-            <Path d={pathFor(actualPoints)} fill="none" stroke="#7C5CF6" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            <SvgText x="2" y="43" fill="#64748B" fontSize="14" fontWeight="800">{money(max)}</SvgText>
+            <SvgText x="2" y="113" fill="#64748B" fontSize="14" fontWeight="800">{money(max / 2)}</SvgText>
+            <SvgText x="2" y="183" fill="#64748B" fontSize="14" fontWeight="800">R$ 0</SvgText>
+            <Path d={pathFor(plannedPoints)} fill="none" stroke="#38A8E8" strokeWidth="5" strokeDasharray="12 12" strokeLinecap="round" strokeLinejoin="round" />
+            <Path d={pathFor(actualPoints)} fill="none" stroke="#7C5CF6" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
             {actualPoints.map((point) => (
-              <Circle key={point.label} cx={point.x} cy={point.y} r="4" fill="#7C5CF6" />
+              <Circle key={point.label} cx={point.x} cy={point.y} r="7" fill="#7C5CF6" />
             ))}
             {actualPoints.map((point) => (
-              <SvgText key={`${point.label}-label`} x={point.x} y="152" fill="#111827" fontSize="11" fontWeight="900" textAnchor="middle">
+              <SvgText key={`${point.label}-label`} x={point.x} y="232" fill="#111827" fontSize="14" fontWeight="900" textAnchor="middle">
                 {point.label}
               </SvgText>
             ))}
@@ -74,10 +74,10 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 }
 
 function pointsFor(rows: { label: string; value: number }[], max: number) {
-  const left = 56;
-  const width = 286;
-  const top = 24;
-  const height = 92;
+  const left = 156;
+  const width = 960;
+  const top = 38;
+  const height = 140;
   const divisor = Math.max(rows.length - 1, 1);
   return rows.map((row, index) => ({
     label: row.label,
@@ -92,7 +92,7 @@ function pathFor(points: { x: number; y: number }[]) {
 }
 
 const styles = StyleSheet.create({
-  embedded: { gap: theme.spacing.md },
+  embedded: { width: "100%", gap: theme.spacing.md },
   legend: {
     flexDirection: "row",
     justifyContent: "center",
@@ -114,8 +114,12 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   chartBox: {
-    minHeight: 170,
+    width: "100%",
+    minHeight: 260,
     justifyContent: "center"
+  },
+  svg: {
+    width: "100%"
   },
   empty: { color: theme.colors.muted, fontWeight: "700" }
 });
