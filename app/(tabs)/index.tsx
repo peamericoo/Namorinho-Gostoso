@@ -1,33 +1,30 @@
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, StyleSheet, Text, useWindowDimensions, View, type StyleProp, type ViewStyle } from "react-native";
+import { DashboardFinancialSummary } from "../../src/components/dashboard/DashboardFinancialSummary";
+import { DashboardNextStepCard, type DashboardNextAction } from "../../src/components/dashboard/DashboardNextStepCard";
 import { JourneyProgress } from "../../src/components/dashboard/JourneyProgress";
 import { TripSelector } from "../../src/components/dashboard/TripSelector";
 import { TripSummaryCard } from "../../src/components/dashboard/TripSummaryCard";
-import { NotificationBell } from "../../src/components/notifications/NotificationBell";
-import { NotificationsSheet, type NotificationItem } from "../../src/components/notifications/NotificationsSheet";
-import { Badge } from "../../src/components/ui/Badge";
-import { Button } from "../../src/components/ui/Button";
-import { Card } from "../../src/components/ui/Card";
 import { EmptyState } from "../../src/components/ui/EmptyState";
-import { Header } from "../../src/components/ui/Header";
 import { Screen } from "../../src/components/ui/Screen";
 import { Skeleton } from "../../src/components/ui/Skeleton";
 import { theme } from "../../src/constants/theme";
 import { useDashboard } from "../../src/hooks/useDashboard";
 import { useWorkspace } from "../../src/hooks/useWorkspace";
-import { calculateSettlement, plannedByTrip, tripSummary } from "../../src/lib/calculations";
-import { money } from "../../src/lib/formatters";
+import { calculateSettlement, plannedByTrip } from "../../src/lib/calculations";
 import type { Expense, PlannedExpense, Settlement, Trip } from "../../src/types/models";
+
+const DASHBOARD_MAX_WIDTH = 1360;
+const TOP_CARD_HEIGHT = 348;
 
 export default function DashboardScreen() {
   const workspace = useWorkspace();
   const dashboard = useDashboard();
   const data = dashboard.data;
   const { width } = useWindowDimensions();
-  const isWide = width >= 920;
+  const isWide = width >= 980;
   const [selectedTripId, setSelectedTripId] = useState("");
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const defaultTripId = data.upcomingTrip?.id ?? data.lastCompletedTrip?.id ?? data.trips[0]?.id ?? "";
 
@@ -47,30 +44,16 @@ export default function DashboardScreen() {
   const selectedSettlements = useMemo(() => filterSettlementsByTrip(data.settlements, selectedTrip), [data.settlements, selectedTrip]);
   const selectedSettlement = useMemo(() => calculateSettlement(selectedExpenses, selectedSettlements), [selectedExpenses, selectedSettlements]);
   const nextAction = useMemo(() => (selectedTrip ? nextActionFor(selectedTrip, selectedExpenses, selectedPlanned, selectedSettlement.amount) : null), [selectedExpenses, selectedPlanned, selectedSettlement.amount, selectedTrip]);
-  const notifications = useMemo(() => (selectedTrip ? selectedTripNotifications(selectedTrip, selectedExpenses, selectedPlanned, data.alerts, selectedSettlement.amount) : []), [data.alerts, selectedExpenses, selectedPlanned, selectedSettlement.amount, selectedTrip]);
-  const notificationCount = notifications.filter((notification) => notification.tone !== "success").length;
+  const displayName = workspace.data?.profile?.display_name ?? "vocês";
+  const coupleName = workspace.data?.couple?.name ?? "Nosso Lugar";
 
   return (
-    <Screen>
-      <Header
-        title={`Oi, ${workspace.data?.profile?.display_name ?? "vocês"}`}
-        subtitle={`${workspace.data?.couple?.name ?? "Espaço do casal"} · painel por viagem.`}
-        right={
-          <View style={styles.headerActions}>
-            <NotificationBell count={notificationCount} onPress={() => setNotificationsOpen(true)} />
-            <Button
-              title={selectedTrip ? "Novo gasto" : "Planejar viagem"}
-              onPress={() => router.push(selectedTrip ? (`/expenses/new?tripId=${selectedTrip.id}` as never) : "/trips/new")}
-            />
-          </View>
-        }
-      />
-      <NotificationsSheet visible={notificationsOpen} notifications={notifications} onClose={() => setNotificationsOpen(false)} />
-
+    <Screen maxWidth={DASHBOARD_MAX_WIDTH} contentStyle={styles.screenContent}>
       {dashboard.isLoading ? (
         <>
           <Skeleton />
-          <Skeleton height={180} />
+          <Skeleton height={220} />
+          <Skeleton height={220} />
         </>
       ) : !data.trips.length ? (
         <EmptyState
@@ -81,26 +64,30 @@ export default function DashboardScreen() {
         />
       ) : selectedTrip ? (
         <>
-          <TripSelector trips={data.trips} selectedTripId={selectedTrip.id} onChange={setSelectedTripId} />
+          <AnimatedSection style={[styles.welcomeBar, isWide && styles.welcomeBarWide]}>
+            <View style={styles.welcomeCopy}>
+              <Text style={styles.welcomeTitle}>Olá, {displayName}! 👋</Text>
+              <Text style={styles.welcomeSubtitle}>Bem-vindo ao painel de viagens do {coupleName}.</Text>
+            </View>
+            <TripSelector trips={data.trips} selectedTripId={selectedTrip.id} onChange={setSelectedTripId} style={isWide ? styles.selectorWide : undefined} />
+          </AnimatedSection>
 
-          <TripSummaryCard
-            trip={selectedTrip}
-            expenses={selectedExpenses}
-            plannedExpenses={selectedPlanned}
-            onOpenTrip={() => router.push(`/trips/${selectedTrip.id}`)}
-          />
-          {nextAction ? <NextActionCard action={nextAction} /> : null}
+          <AnimatedSection delay={70} style={[styles.heroGrid, isWide && styles.heroGridWide]}>
+            <TripSummaryCard trip={selectedTrip} expenses={selectedExpenses} plannedExpenses={selectedPlanned} onOpenTrip={() => router.push(`/trips/${selectedTrip.id}`)} style={isWide ? styles.tripCardWide : undefined} />
+            {nextAction ? <DashboardNextStepCard action={nextAction} style={isWide ? styles.nextCardWide : undefined} /> : null}
+          </AnimatedSection>
 
-          <View style={[styles.contentGrid, isWide && styles.contentGridWide]}>
+          <AnimatedSection delay={140} style={[styles.detailGrid, isWide && styles.detailGridWide]}>
             <JourneyProgress
               trip={selectedTrip}
               expenses={selectedExpenses}
               plannedExpenses={selectedPlanned}
               checklistItems={data.checklistItems}
               settlementAmount={selectedSettlement.amount}
+              style={isWide ? styles.journeyWide : undefined}
             />
-            <FinancialOverview trip={selectedTrip} expenses={selectedExpenses} plannedExpenses={selectedPlanned} settlements={selectedSettlements} />
-          </View>
+            <DashboardFinancialSummary trip={selectedTrip} expenses={selectedExpenses} plannedExpenses={selectedPlanned} settlements={selectedSettlements} style={isWide ? styles.financeWide : undefined} />
+          </AnimatedSection>
         </>
       ) : null}
     </Screen>
@@ -117,7 +104,7 @@ function filterSettlementsByTrip(settlements: Settlement[], trip: Trip | null) {
   return settlements.filter((settlement) => settlement.trip_id === trip.id);
 }
 
-function nextActionFor(trip: Trip, expenses: Expense[], plannedExpenses: PlannedExpense[], settlementAmount: number) {
+function nextActionFor(trip: Trip, expenses: Expense[], plannedExpenses: PlannedExpense[], settlementAmount: number): DashboardNextAction {
   if (trip.planned_budget === 0 && plannedByTrip(trip.id, plannedExpenses) === 0) {
     return {
       eyebrow: "Próxima etapa",
@@ -154,136 +141,102 @@ function nextActionFor(trip: Trip, expenses: Expense[], plannedExpenses: Planned
   };
 }
 
-function selectedTripNotifications(
-  trip: Trip,
-  expenses: Expense[],
-  plannedExpenses: PlannedExpense[],
-  globalAlerts: { message: string; tone: "warning" | "danger" | "success" }[],
-  settlementAmount: number
-) {
-  const summary = tripSummary(trip, expenses, plannedExpenses);
-  const notifications: NotificationItem[] = [];
-  if (summary.difference < 0) {
-    notifications.push({
-      id: `${trip.id}-budget`,
-      title: "Atenção ao orçamento",
-      tone: "danger",
-      message: `Esta viagem está ${money(Math.abs(summary.difference))} acima do orçamento planejado.`,
-      actionLabel: "Ver gastos",
-      route: "/(tabs)/expenses"
-    });
-  }
+function AnimatedSection({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: StyleProp<ViewStyle> }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(14)).current;
 
-  globalAlerts
-    .filter((alert) => alert.message.includes(trip.title))
-    .slice(0, 2)
-    .forEach((alert, index) => {
-      notifications.push({
-        id: `${trip.id}-global-${index}`,
-        title: alert.tone === "danger" ? "Atenção ao orçamento" : "Ponto de atenção",
-        message: alert.message,
-        tone: alert.tone,
-        actionLabel: "Abrir viagem",
-        route: `/trips/${trip.id}`
-      });
-    });
+  useEffect(() => {
+    const animation = Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 260,
+        delay,
+        useNativeDriver: false
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        delay,
+        speed: 18,
+        bounciness: 5,
+        useNativeDriver: false
+      })
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [delay, opacity, translateY]);
 
-  if (settlementAmount > 0) {
-    notifications.push({
-      id: `${trip.id}-settlement`,
-      title: "Acerto pendente",
-      tone: "warning",
-      message: "Existe valor pendente de acerto entre Pedro e Camilly nesta seleção.",
-      actionLabel: "Simular acerto",
-      route: "/settlements"
-    });
-  }
-
-  if (notifications.length === 0) {
-    notifications.push({
-      id: `${trip.id}-ok`,
-      title: "Tudo certo",
-      tone: "success",
-      message: "Nenhuma notificação importante para esta viagem agora."
-    });
-  }
-  return notifications.slice(0, 4);
+  return <Animated.View style={[style, { opacity, transform: [{ translateY }] }]}>{children}</Animated.View>;
 }
 
-function NextActionCard({ action }: { action: { eyebrow: string; title: string; message: string; action: string; route: string } }) {
-  return (
-    <Card style={styles.nextActionCard}>
-      <View style={styles.nextActionCopy}>
-        <Text style={styles.eyebrow}>{action.eyebrow}</Text>
-        <Text style={styles.cardTitle}>{action.title}</Text>
-        <Text style={styles.muted}>{action.message}</Text>
-      </View>
-      <Button title={action.action} onPress={() => router.push(action.route as never)} />
-    </Card>
-  );
-}
-
-function FinancialOverview({ trip, expenses, plannedExpenses, settlements }: { trip: Trip; expenses: Expense[]; plannedExpenses: PlannedExpense[]; settlements: Settlement[] }) {
-  const settlement = calculateSettlement(expenses, settlements);
-  const summary = tripSummary(trip, expenses, plannedExpenses);
-  return (
-    <Card>
-      <View style={styles.cardHeaderRow}>
-        <View style={styles.titleWrap}>
-          <Text style={styles.eyebrow}>Resumo financeiro</Text>
-          <Text style={styles.cardTitle}>Divisão e orçamento</Text>
-        </View>
-        <Badge label={summary.difference < 0 ? "Acima" : "Dentro"} tone={summary.difference < 0 ? "danger" : "success"} />
-      </View>
-      <View style={styles.metricGrid}>
-        <MiniMetric label="Planejado" value={money(summary.planned)} />
-        <MiniMetric label="Realizado" value={money(summary.actual)} />
-        <MiniMetric label="Diferença" value={money(summary.difference)} tone={summary.difference < 0 ? "danger" : "success"} />
-        <MiniMetric label="Pedro pagou" value={money(settlement.totalPaidByPedro)} tone="pedro" />
-        <MiniMetric label="Camilly pagou" value={money(settlement.totalPaidByCamilly)} tone="camilly" />
-        <MiniMetric label="Acerto" value={money(settlement.amount)} tone={settlement.amount > 0 ? "warning" : "success"} />
-      </View>
-      <Text style={styles.muted}>{settlement.message}</Text>
-    </Card>
-  );
-}
-
-function MiniMetric({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "neutral" | "success" | "warning" | "danger" | "pedro" | "camilly" }) {
-  return (
-    <View style={[styles.miniMetric, tone !== "neutral" && styles[tone]]}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={styles.metricValue}>{value}</Text>
-    </View>
-  );
-}
+const palette = { ink: "#111827" };
 
 const styles = StyleSheet.create({
-  headerActions: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: theme.spacing.sm },
-  nextActionCard: { minHeight: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  nextActionCopy: { flex: 1, gap: theme.spacing.xs },
-  contentGrid: { gap: theme.spacing.md },
-  contentGridWide: { flexDirection: "row", alignItems: "stretch" },
-  cardHeaderRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: theme.spacing.md },
-  titleWrap: { flex: 1 },
-  eyebrow: { color: theme.colors.coupleStrong, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.6, fontSize: 12 },
-  cardTitle: { color: theme.colors.text, fontWeight: "900", fontSize: theme.typography.h2 },
-  muted: { color: theme.colors.muted, fontWeight: "700", lineHeight: 21 },
-  metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
-  miniMetric: {
-    flex: 1,
-    minWidth: 112,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.line,
-    backgroundColor: theme.colors.input,
-    padding: theme.spacing.sm,
-    gap: 2
+  screenContent: {
+    position: "relative",
+    paddingTop: 28,
+    paddingHorizontal: 22,
+    paddingBottom: 40,
+    gap: 22
   },
-  success: { backgroundColor: theme.colors.success },
-  warning: { backgroundColor: theme.colors.warning },
-  danger: { backgroundColor: theme.colors.danger },
-  pedro: { backgroundColor: theme.colors.pedro },
-  camilly: { backgroundColor: theme.colors.camilly },
-  metricLabel: { color: theme.colors.muted, fontWeight: "900", fontSize: theme.typography.small },
-  metricValue: { color: theme.colors.text, fontWeight: "900", fontSize: 16 }
+  welcomeBar: {
+    gap: theme.spacing.lg
+  },
+  welcomeBarWide: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between"
+  },
+  welcomeCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 5
+  },
+  welcomeTitle: {
+    color: palette.ink,
+    fontSize: 28,
+    lineHeight: 35,
+    fontWeight: "900"
+  },
+  welcomeSubtitle: {
+    color: theme.colors.muted,
+    fontSize: 16,
+    lineHeight: 23,
+    fontWeight: "700"
+  },
+  selectorWide: {
+    flexShrink: 0
+  },
+  heroGrid: {
+    gap: 22
+  },
+  heroGridWide: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    width: "100%"
+  },
+  tripCardWide: {
+    flex: 1,
+    minWidth: 0,
+    height: TOP_CARD_HEIGHT
+  },
+  nextCardWide: {
+    width: 380,
+    flexShrink: 0,
+    height: TOP_CARD_HEIGHT
+  },
+  detailGrid: {
+    gap: 22
+  },
+  detailGridWide: {
+    flexDirection: "row",
+    alignItems: "stretch"
+  },
+  journeyWide: {
+    flex: 1.05,
+    minWidth: 0
+  },
+  financeWide: {
+    flex: 0.95,
+    minWidth: 0
+  }
 });

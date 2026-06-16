@@ -2,11 +2,29 @@ import { Redirect, Tabs } from "expo-router";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, Animated, Platform, StyleSheet, View } from "react-native";
 import { BarChart3, Calculator, CircleDollarSign, Home, Map, MoreHorizontal, type LucideIcon } from "lucide-react-native";
+import Svg, { Path } from "react-native-svg";
 import { theme } from "../../src/constants/theme";
 import { useAuth } from "../../src/hooks/useAuth";
 import { useWorkspace } from "../../src/hooks/useWorkspace";
 
 const BASE_TAB_BAR_HEIGHT = 62;
+const WAVE_VIEWBOX_WIDTH = 390;
+const WAVE_VIEWBOX_HEIGHT = 88;
+
+function buildWavePath({ amplitude, baseline, phase }: { amplitude: number; baseline: number; phase: number }) {
+  const points = Array.from({ length: 17 }, (_, index) => {
+    const x = (WAVE_VIEWBOX_WIDTH / 16) * index;
+    const primary = Math.sin((x / WAVE_VIEWBOX_WIDTH) * Math.PI * 2 + phase) * amplitude;
+    const secondary = Math.sin((x / WAVE_VIEWBOX_WIDTH) * Math.PI * 4 + phase * 0.55) * (amplitude * 0.26);
+    return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${(baseline + primary + secondary).toFixed(1)}`;
+  });
+
+  return `${points.join(" ")} L ${WAVE_VIEWBOX_WIDTH} ${WAVE_VIEWBOX_HEIGHT} L 0 ${WAVE_VIEWBOX_HEIGHT} Z`;
+}
+
+const tabWaveSurface = buildWavePath({ amplitude: 7.2, baseline: 24, phase: 0.28 });
+const tabWaveGlow = buildWavePath({ amplitude: 6.5, baseline: 20, phase: 1.15 });
+const tabWaveStroke = buildWavePath({ amplitude: 7.2, baseline: 24, phase: 0.28 }).split(" L 390 88")[0];
 
 function TabIcon({ Icon, color, focused, size }: { Icon: LucideIcon; color: string; focused: boolean; size: number }) {
   return (
@@ -45,6 +63,49 @@ function ActiveTabLabel({ focused, color, label }: { focused: boolean; color: st
   );
 }
 
+function AnimatedTabBarBackground() {
+  const drift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(drift, {
+          toValue: 1,
+          duration: 5200,
+          useNativeDriver: false
+        }),
+        Animated.timing(drift, {
+          toValue: 0,
+          duration: 5200,
+          useNativeDriver: false
+        })
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [drift]);
+
+  const translateX = drift.interpolate({ inputRange: [0, 1], outputRange: [-10, 10] });
+  const translateY = drift.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });
+  const glowOpacity = drift.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.34, 0.52, 0.34] });
+
+  return (
+    <View style={styles.waveHost}>
+      <Animated.View style={[styles.waveGlow, { opacity: glowOpacity, transform: [{ translateX }] }]}>
+        <Svg width="100%" height="100%" viewBox={`0 0 ${WAVE_VIEWBOX_WIDTH} ${WAVE_VIEWBOX_HEIGHT}`} preserveAspectRatio="none">
+          <Path d={tabWaveGlow} fill={theme.colors.couple} />
+        </Svg>
+      </Animated.View>
+      <Animated.View style={[styles.waveSurface, { transform: [{ translateY }] }]}>
+        <Svg width="100%" height="100%" viewBox={`0 0 ${WAVE_VIEWBOX_WIDTH} ${WAVE_VIEWBOX_HEIGHT}`} preserveAspectRatio="none">
+          <Path d={tabWaveSurface} fill={theme.colors.surface} />
+          <Path d={tabWaveStroke} fill="none" stroke={theme.colors.line} strokeWidth={1.2} opacity={0.9} />
+        </Svg>
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function TabsLayout() {
   const auth = useAuth();
   const workspace = useWorkspace();
@@ -68,10 +129,11 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: theme.colors.muted,
         tabBarActiveBackgroundColor: theme.colors.couple,
         tabBarInactiveBackgroundColor: "transparent",
+        tabBarBackground: () => <AnimatedTabBarBackground />,
         tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.line,
-          borderTopWidth: 1,
+          backgroundColor: "transparent",
+          borderTopColor: "transparent",
+          borderTopWidth: 0,
           height: BASE_TAB_BAR_HEIGHT,
           minHeight: BASE_TAB_BAR_HEIGHT,
           paddingTop: 0,
@@ -166,6 +228,29 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
+  waveHost: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: -22,
+    bottom: 0,
+    overflow: "hidden",
+    pointerEvents: "none"
+  },
+  waveGlow: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0
+  },
+  waveSurface: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 2,
+    bottom: 0
+  },
   tabBarDepth: Platform.select({
     web: {
       boxShadow: "0 -10px 24px rgba(71, 85, 105, 0.08)"

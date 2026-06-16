@@ -5,11 +5,12 @@ import { theme } from "../../constants/theme";
 type CardProps = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  wrapperStyle?: StyleProp<ViewStyle>;
   onPress?: () => void;
   accessibilityLabel?: string;
 };
 
-export function Card({ children, style, onPress, accessibilityLabel }: CardProps) {
+export function Card({ children, style, wrapperStyle, onPress, accessibilityLabel }: CardProps) {
   const scale = useState(() => new Animated.Value(1))[0];
   const lift = useState(() => new Animated.Value(0))[0];
 
@@ -35,17 +36,20 @@ export function Card({ children, style, onPress, accessibilityLabel }: CardProps
 
   return (
     <Animated.View
-      style={{
-        transform: [
-          { scale },
-          {
-            translateY: lift.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, -3]
-            })
-          }
-        ]
-      }}
+      style={[
+        wrapperStyle,
+        {
+          transform: [
+            { scale },
+            {
+              translateY: lift.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, -3]
+              })
+            }
+          ]
+        }
+      ]}
     >
       <Pressable
         accessibilityRole="button"
