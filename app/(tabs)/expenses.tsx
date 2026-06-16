@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { ExpenseFiltersPanel } from "../../src/components/expenses/ExpenseFiltersPanel";
@@ -14,6 +14,7 @@ import { Header } from "../../src/components/ui/Header";
 import { AppModal } from "../../src/components/ui/Modal";
 import { Screen } from "../../src/components/ui/Screen";
 import { Skeleton } from "../../src/components/ui/Skeleton";
+import { labelPerson } from "../../src/constants/categories";
 import { theme } from "../../src/constants/theme";
 import { useCategories, useExpenses, usePlannedExpenses, useTrips } from "../../src/hooks/useFinanceData";
 import {
@@ -36,6 +37,7 @@ export default function ExpensesScreen() {
   const trips = useTrips();
   const categories = useCategories();
   const plannedExpenses = usePlannedExpenses();
+  const params = useLocalSearchParams<{ source?: string; tripId?: string; dateFrom?: string; dateTo?: string; analyticsPerson?: string }>();
   const { width } = useWindowDimensions();
   const isWide = width >= 980;
   const [filters, setFilters] = useState<ExpenseFilters>(defaultExpenseFilters);
@@ -63,6 +65,18 @@ export default function ExpensesScreen() {
   useEffect(() => {
     setPage(1);
   }, [filters, personGrouping, viewMode]);
+
+  useEffect(() => {
+    if (paramValue(params.source) !== "analytics") return;
+    const analyticsPerson = paramValue(params.analyticsPerson);
+    setFilters((current) => ({
+      ...current,
+      tripId: paramValue(params.tripId) || defaultExpenseFilters.tripId,
+      dateFrom: paramValue(params.dateFrom) || defaultExpenseFilters.dateFrom,
+      dateTo: paramValue(params.dateTo) || defaultExpenseFilters.dateTo,
+      search: analyticsPerson && analyticsPerson !== "todos" ? labelPerson(analyticsPerson) : defaultExpenseFilters.search
+    }));
+  }, [params.analyticsPerson, params.dateFrom, params.source, params.tripId, params.dateTo]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -159,6 +173,10 @@ export default function ExpensesScreen() {
       )}
     </Screen>
   );
+}
+
+function paramValue(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 function Pagination({ page, totalPages, onPageChange }: { page: number; totalPages: number; onPageChange: (page: number) => void }) {

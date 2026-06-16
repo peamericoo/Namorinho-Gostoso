@@ -16,7 +16,7 @@ export function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card>
+    <Card style={styles.card}>
       <View>
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -28,8 +28,14 @@ export function ChartCard({
 }
 
 const styles = StyleSheet.create({
-  title: { color: theme.colors.text, fontWeight: "900", fontSize: theme.typography.h2 },
-  subtitle: { color: theme.colors.muted, fontWeight: "700", marginTop: 2, lineHeight: 19 },
-  body: { gap: theme.spacing.sm },
+  card: {
+    minHeight: 282,
+    borderRadius: 20,
+    padding: 22,
+    gap: theme.spacing.lg
+  },
+  title: { color: "#111827", fontWeight: "900", fontSize: 16, lineHeight: 22 },
+  subtitle: { color: theme.colors.muted, fontWeight: "700", marginTop: 2, lineHeight: 18, fontSize: 12 },
+  body: { gap: theme.spacing.md },
   empty: { color: theme.colors.muted, fontWeight: "700", lineHeight: 20 }
 });
