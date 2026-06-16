@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { theme } from "../../constants/theme";
 
 type ButtonProps = {
@@ -9,12 +9,14 @@ type ButtonProps = {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
+  buttonStyle?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   accessibilityLabel?: string;
   icon?: React.ReactNode;
   size?: "sm" | "md";
 };
 
-export function Button({ title, onPress, variant = "primary", disabled, loading, style, accessibilityLabel, icon, size = "md" }: ButtonProps) {
+export function Button({ title, onPress, variant = "primary", disabled, loading, style, buttonStyle, textStyle, accessibilityLabel, icon, size = "md" }: ButtonProps) {
   const isDisabled = disabled || loading;
   const [focused, setFocused] = useState(false);
   const scale = useState(() => new Animated.Value(1))[0];
@@ -79,7 +81,8 @@ export function Button({ title, onPress, variant = "primary", disabled, loading,
           styles[variant],
           focused && styles.focused,
           pressed && !isDisabled && styles.pressed,
-          isDisabled && styles.disabled
+          isDisabled && styles.disabled,
+          buttonStyle
         ]}
       >
         {loading ? (
@@ -87,7 +90,7 @@ export function Button({ title, onPress, variant = "primary", disabled, loading,
         ) : (
           <View style={styles.content}>
             {icon ? <View style={styles.icon}>{icon}</View> : null}
-            <Text style={[styles.text, variant !== "primary" && styles.textAlt, variant === "danger" && styles.textDanger]} numberOfLines={1}>
+            <Text style={[styles.text, variant !== "primary" && styles.textAlt, variant === "danger" && styles.textDanger, textStyle]} numberOfLines={1}>
               {title}
             </Text>
           </View>

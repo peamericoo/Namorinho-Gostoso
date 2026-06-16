@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useFocusEffect } from "expo-router";
-import { Animated, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet } from "react-native";
+import { Animated, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { appMaxWidth, theme } from "../../constants/theme";
 import { AppBackdrop } from "./AppBackdrop";
@@ -10,9 +10,11 @@ type ScreenProps = {
   scroll?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
+  contentStyle?: StyleProp<ViewStyle>;
+  maxWidth?: number;
 };
 
-export function Screen({ children, scroll = true, refreshing = false, onRefresh }: ScreenProps) {
+export function Screen({ children, scroll = true, refreshing = false, onRefresh, contentStyle, maxWidth }: ScreenProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
 
@@ -41,7 +43,7 @@ export function Screen({ children, scroll = true, refreshing = false, onRefresh 
   );
 
   const content = (
-    <Animated.View style={[styles.content, { opacity, transform: [{ translateY }] }]}>
+    <Animated.View style={[styles.content, maxWidth ? { maxWidth } : null, contentStyle, { opacity, transform: [{ translateY }] }]}>
       {children}
     </Animated.View>
   );
