@@ -60,6 +60,7 @@ export default function AnalyticsScreen() {
   const data = dashboard.data;
   const { width } = useWindowDimensions();
   const isWide = width >= 980;
+  const isCompact = width < 720;
   const [filters, setFilters] = useState<AnalyticsFilters>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -112,21 +113,21 @@ export default function AnalyticsScreen() {
             <SectionTitle title="Visão principal" subtitle="Gráficos para entender composição, orçamento, divisão e tempo." />
             <View style={[styles.grid, isWide && styles.gridWide]}>
               <View style={styles.widget}>
-                <AnalyticsVisualDeck expenses={filteredExpenses} categories={data.categories} plannedTotal={plannedTotal} actualTotal={actualTotal} />
+                <AnalyticsVisualDeck expenses={filteredExpenses} categories={data.categories} plannedTotal={plannedTotal} actualTotal={actualTotal} compact={isCompact} />
               </View>
             </View>
 
             <SectionTitle title="Detalhamento" subtitle="Quebra por categoria, pessoa ou viagem, conforme o controle escolhido." />
             <View style={styles.grid}>
               <View style={styles.widget}>
-                <AnalyticsDetailDeck filters={filters} expenses={filteredExpenses} plannedExpenses={filteredPlanned} trips={data.trips} scopedTrips={scopedTrips} categories={data.categories} allPlannedExpenses={data.plannedExpenses} />
+                <AnalyticsDetailDeck filters={filters} expenses={filteredExpenses} plannedExpenses={filteredPlanned} trips={data.trips} scopedTrips={scopedTrips} categories={data.categories} allPlannedExpenses={data.plannedExpenses} compact={isCompact} />
               </View>
             </View>
 
             <SectionTitle title="Prioridades" subtitle="Itens que merecem atenção primeiro." />
             <View style={styles.grid}>
               <View style={styles.widget}>
-                <AnalyticsPriorityDeck expenses={filteredExpenses} actualTotal={actualTotal} plannedTotal={plannedTotal} highestTrip={highestTrip} settlementAmount={settlement.amount} onViewAllExpenses={() => openExpensesWithAnalyticsFilters(filters)} />
+                <AnalyticsPriorityDeck expenses={filteredExpenses} actualTotal={actualTotal} plannedTotal={plannedTotal} highestTrip={highestTrip} settlementAmount={settlement.amount} onViewAllExpenses={() => openExpensesWithAnalyticsFilters(filters)} compact={isCompact} />
               </View>
             </View>
           </AnimatedSection>
@@ -175,7 +176,7 @@ function FilterDock({ filters, trips, onOpen, onReset }: { filters: AnalyticsFil
   );
 }
 
-function AnalyticsVisualDeck({ expenses, categories, plannedTotal, actualTotal }: { expenses: Expense[]; categories: Category[]; plannedTotal: number; actualTotal: number }) {
+function AnalyticsVisualDeck({ expenses, categories, plannedTotal, actualTotal, compact }: { expenses: Expense[]; categories: Category[]; plannedTotal: number; actualTotal: number; compact: boolean }) {
   const motion = useDeckMotion<VisualDeckId>("categoria");
   const activeItem = visualDeckItems.find((item) => item.id === motion.active) ?? visualDeckItems[0];
 
@@ -183,10 +184,11 @@ function AnalyticsVisualDeck({ expenses, categories, plannedTotal, actualTotal }
     <AnalyticsWidget
       title={activeItem.title}
       subtitle={activeItem.subtitle}
-      style={styles.deckCard}
-      right={<DeckTabs items={visualDeckItems} active={motion.active} onChange={motion.choose} />}
+      style={[styles.deckCard, compact && styles.deckCardCompact]}
+      right={compact ? undefined : <DeckTabs items={visualDeckItems} active={motion.active} onChange={motion.choose} />}
     >
-      <Animated.View style={[styles.deckBody, motion.animatedStyle]}>
+      {compact ? <DeckTabs items={visualDeckItems} active={motion.active} onChange={motion.choose} compact /> : null}
+      <Animated.View style={[styles.deckBody, compact && styles.deckBodyCompact, motion.animatedStyle]}>
         {motion.active === "categoria" ? <SpendingByCategoryChart expenses={expenses} categories={categories} framed={false} /> : null}
         {motion.active === "orcamento" ? <PlannedVsActualChart planned={plannedTotal} actual={actualTotal} framed={false} /> : null}
         {motion.active === "divisao" ? <PersonSplitChart expenses={expenses} framed={false} /> : null}
@@ -230,7 +232,8 @@ function AnalyticsDetailDeck({
   trips,
   scopedTrips,
   categories,
-  allPlannedExpenses
+  allPlannedExpenses,
+  compact
 }: {
   filters: AnalyticsFilters;
   expenses: Expense[];
@@ -239,6 +242,7 @@ function AnalyticsDetailDeck({
   scopedTrips: Trip[];
   categories: Category[];
   allPlannedExpenses: PlannedExpense[];
+  compact: boolean;
 }) {
   const motion = useDeckMotion<DetailDeckId>("recorte");
   const activeItem = detailDeckItems.find((item) => item.id === motion.active) ?? detailDeckItems[0];
@@ -247,10 +251,11 @@ function AnalyticsDetailDeck({
     <AnalyticsWidget
       title={activeItem.title}
       subtitle={activeItem.subtitle}
-      style={styles.deckCard}
-      right={<DeckTabs items={detailDeckItems} active={motion.active} onChange={motion.choose} />}
+      style={[styles.deckCard, compact && styles.deckCardCompact]}
+      right={compact ? undefined : <DeckTabs items={detailDeckItems} active={motion.active} onChange={motion.choose} />}
     >
-      <Animated.View style={[styles.deckBody, motion.animatedStyle]}>
+      {compact ? <DeckTabs items={detailDeckItems} active={motion.active} onChange={motion.choose} compact /> : null}
+      <Animated.View style={[styles.deckBody, compact && styles.deckBodyCompact, motion.animatedStyle]}>
         {motion.active === "recorte" ? <BreakdownContent filters={filters} expenses={expenses} plannedExpenses={plannedExpenses} trips={trips} categories={categories} /> : null}
         {motion.active === "viagens" ? <TripComparisonContent trips={scopedTrips} expenses={expenses} plannedExpenses={plannedExpenses} allPlannedExpenses={allPlannedExpenses} /> : null}
       </Animated.View>
@@ -264,7 +269,8 @@ function AnalyticsPriorityDeck({
   plannedTotal,
   highestTrip,
   settlementAmount,
-  onViewAllExpenses
+  onViewAllExpenses,
+  compact
 }: {
   expenses: Expense[];
   actualTotal: number;
@@ -272,6 +278,7 @@ function AnalyticsPriorityDeck({
   highestTrip: ReturnType<typeof tripComparisonRows>[number] | null;
   settlementAmount: number;
   onViewAllExpenses: () => void;
+  compact: boolean;
 }) {
   const motion = useDeckMotion<PriorityDeckId>("gastos");
   const activeItem = priorityDeckItems.find((item) => item.id === motion.active) ?? priorityDeckItems[0];
@@ -280,10 +287,11 @@ function AnalyticsPriorityDeck({
     <AnalyticsWidget
       title={activeItem.title}
       subtitle={activeItem.subtitle}
-      style={styles.deckCard}
-      right={<DeckTabs items={priorityDeckItems} active={motion.active} onChange={motion.choose} />}
+      style={[styles.deckCard, compact && styles.deckCardCompact]}
+      right={compact ? undefined : <DeckTabs items={priorityDeckItems} active={motion.active} onChange={motion.choose} />}
     >
-      <Animated.View style={[styles.deckBody, motion.animatedStyle]}>
+      {compact ? <DeckTabs items={priorityDeckItems} active={motion.active} onChange={motion.choose} compact /> : null}
+      <Animated.View style={[styles.deckBody, compact && styles.deckBodyCompact, motion.animatedStyle]}>
         {motion.active === "gastos" ? <RankingContent expenses={expenses} onViewAll={onViewAllExpenses} /> : null}
         {motion.active === "leituras" ? <InsightContent actualTotal={actualTotal} plannedTotal={plannedTotal} highestTrip={highestTrip} settlementAmount={settlementAmount} /> : null}
       </Animated.View>
@@ -309,10 +317,10 @@ function BreakdownContent({ filters, expenses, plannedExpenses, trips, categorie
           <AnimatedListItem key={row.label} index={index}>
             <View style={styles.row}>
               <View style={styles.rowCopy}>
-                <Text style={styles.rowTitle}>{row.label}</Text>
-                <Text style={styles.rowMeta}>{row.helper}</Text>
+                <Text style={styles.rowTitle} numberOfLines={1}>{row.label}</Text>
+                <Text style={styles.rowMeta} numberOfLines={2}>{row.helper}</Text>
               </View>
-              <Text style={styles.rowAmount}>{money(row.amount)}</Text>
+              <Text style={styles.rowAmount} numberOfLines={1}>{money(row.amount)}</Text>
             </View>
           </AnimatedListItem>
         ))}
@@ -327,10 +335,10 @@ function BreakdownContent({ filters, expenses, plannedExpenses, trips, categorie
             <AnimatedListItem key={row.label} index={index}>
               <View style={styles.modalRow}>
                 <View style={styles.rowCopy}>
-                  <Text style={styles.rowTitle}>{row.label}</Text>
-                  <Text style={styles.rowMeta}>{row.helper}</Text>
+                  <Text style={styles.rowTitle} numberOfLines={1}>{row.label}</Text>
+                  <Text style={styles.rowMeta} numberOfLines={2}>{row.helper}</Text>
                 </View>
-                <Text style={styles.rowAmount}>{money(row.amount)}</Text>
+                <Text style={styles.rowAmount} numberOfLines={1}>{money(row.amount)}</Text>
               </View>
             </AnimatedListItem>
           ))}
@@ -358,9 +366,9 @@ function TripComparisonContent({ trips, expenses, plannedExpenses, allPlannedExp
           <AnimatedListItem key={row.trip.id} index={index}>
             <View style={styles.row}>
               <View style={styles.rowCopy}>
-                <Text style={styles.rowTitle}>{row.trip.title}</Text>
-                <Text style={styles.rowMeta}>{dateBR(row.trip.start_date)} - {dateBR(row.trip.end_date)}</Text>
-                <Text style={styles.rowMeta}>Planejado {money(row.summary.planned)} · diferença {money(row.summary.difference)}</Text>
+                <Text style={styles.rowTitle} numberOfLines={1}>{row.trip.title}</Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>{dateBR(row.trip.start_date)} - {dateBR(row.trip.end_date)}</Text>
+                <Text style={styles.rowMeta} numberOfLines={2}>Planejado {money(row.summary.planned)} · diferença {money(row.summary.difference)}</Text>
               </View>
               <Badge label={money(row.summary.actual)} tone={row.summary.difference < 0 ? "danger" : "success"} />
             </View>
@@ -386,10 +394,10 @@ function RankingContent({ expenses, onViewAll }: { expenses: Expense[]; onViewAl
               <Text style={styles.rankingPositionText}>{index + 1}</Text>
             </View>
             <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{expense.description}</Text>
-              <Text style={styles.rowMeta}>{dateBR(expense.spent_at)} · {expense.category?.name ?? "Sem categoria"} · {expense.trip?.title ?? "Sem viagem"}</Text>
+              <Text style={styles.rowTitle} numberOfLines={1}>{expense.description}</Text>
+              <Text style={styles.rowMeta} numberOfLines={2}>{dateBR(expense.spent_at)} · {expense.category?.name ?? "Sem categoria"} · {expense.trip?.title ?? "Sem viagem"}</Text>
             </View>
-            <Text style={styles.rowAmount}>{money(expense.amount)}</Text>
+            <Text style={styles.rowAmount} numberOfLines={1}>{money(expense.amount)}</Text>
           </View>
         </AnimatedListItem>
       ))}
@@ -567,12 +575,12 @@ function useDeckMotion<T extends string>(initial: T) {
   };
 }
 
-function DeckTabs<T extends string>({ items, active, onChange }: { items: readonly { id: T; label: string }[]; active: T; onChange: (id: T) => void }) {
+function DeckTabs<T extends string>({ items, active, onChange, compact = false }: { items: readonly { id: T; label: string }[]; active: T; onChange: (id: T) => void; compact?: boolean }) {
   return (
-    <View style={styles.deckTabs}>
+    <View style={[styles.deckTabs, compact && styles.deckTabsCompact]}>
       {items.map((item) => (
-        <Pressable key={item.id} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: item.id === active }} onPress={() => onChange(item.id)} style={({ pressed }) => [styles.deckTab, item.id === active && styles.deckTabActive, pressed && styles.pressablePressed]}>
-          <Text style={[styles.deckTabText, item.id === active && styles.deckTabTextActive]}>{item.label}</Text>
+        <Pressable key={item.id} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: item.id === active }} onPress={() => onChange(item.id)} style={({ pressed }) => [styles.deckTab, compact && styles.deckTabCompact, item.id === active && styles.deckTabActive, pressed && styles.pressablePressed]}>
+          <Text style={[styles.deckTabText, item.id === active && styles.deckTabTextActive]} numberOfLines={1}>{item.label}</Text>
         </Pressable>
       ))}
     </View>
@@ -594,7 +602,7 @@ function AnimatedListItem({ children, index }: { children: React.ReactNode; inde
     return () => animation.stop();
   }, [index, opacity, translateY]);
 
-  return <Animated.View style={{ opacity, transform: [{ translateY }] }}>{children}</Animated.View>;
+  return <Animated.View style={[styles.animatedListItem, { opacity, transform: [{ translateY }] }]}>{children}</Animated.View>;
 }
 
 function AnimatedSection({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: StyleProp<ViewStyle> }) {
@@ -786,12 +794,21 @@ const styles = StyleSheet.create({
   deckCard: {
     minHeight: 430
   },
+  deckCardCompact: {
+    minHeight: 0
+  },
   deckTabs: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "flex-end",
     gap: theme.spacing.xs,
     maxWidth: 560
+  },
+  deckTabsCompact: {
+    alignSelf: "stretch",
+    justifyContent: "flex-start",
+    maxWidth: "100%",
+    width: "100%"
   },
   deckTab: {
     minHeight: 34,
@@ -802,6 +819,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
     borderWidth: 1,
     borderColor: theme.colors.line
+  },
+  deckTabCompact: {
+    flexGrow: 1,
+    flexBasis: "46%",
+    paddingHorizontal: theme.spacing.sm
   },
   deckTabActive: {
     backgroundColor: "#FFE7EB",
@@ -820,6 +842,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: theme.spacing.md
   },
+  deckBodyCompact: {
+    minHeight: 0,
+    justifyContent: "flex-start"
+  },
   deckSummaryRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -827,6 +853,9 @@ const styles = StyleSheet.create({
   },
   rows: {
     gap: 0
+  },
+  animatedListItem: {
+    width: "100%"
   },
   row: {
     minHeight: 60,
@@ -855,9 +884,11 @@ const styles = StyleSheet.create({
     lineHeight: 17
   },
   rowAmount: {
+    flexShrink: 0,
     color: palette.ink,
     fontSize: 14,
-    fontWeight: "900"
+    fontWeight: "900",
+    maxWidth: 112
   },
   widgetFooter: {
     minHeight: 42,
@@ -957,6 +988,7 @@ const styles = StyleSheet.create({
   insight: {
     flex: 1,
     minWidth: 260,
+    maxWidth: "100%",
     minHeight: 92,
     borderRadius: theme.radius.md,
     borderWidth: 1,
